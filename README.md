@@ -4,7 +4,7 @@ Real-time physically based renderin'.
 ### Features
 Variance shadow mapping with Gaussian filtering using a ping-pong FBO, percentage-closer soft shadows using Poisson disk sampling, cascaded shadow mapping, and physically based rendering with image-based lighting.
 
-Mesh loading using Assimp.
+Mesh loading using Assimp.\s\s
 Texture loading using nothings' stb library.
 
 ### Dependencies
@@ -20,7 +20,7 @@ Glad, GLFW, OpenGL Mathematics (GLM), and Assimp.
 ![](images/csm.png "Cascaded Shadow Mapping")
 
 ### Resources
-Brian Karis' [Real Shading in Unreal Engine 4](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf)
-Real-Time Rendering
-Andrew Lauritzen on Variance Shadow Maps in [GPU Gems 3](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch08.html)
+Brian Karis' [Real Shading in Unreal Engine 4](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf)\s\s
+Real-Time Rendering\s\s
+Andrew Lauritzen on Variance Shadow Maps in [GPU Gems 3](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch08.html)\s\s
 Jan Kautz' [Exponential Shadow Maps](http://jankautz.com/publications/esm_gi08.pdf)
