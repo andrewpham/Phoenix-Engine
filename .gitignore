@@ -1,10 +1,8 @@
 *~
 *.db
-*.dll
 *.suo
 *.user
 Debug/
-Deps/
 x64/
 */x64/
 *.vs/
