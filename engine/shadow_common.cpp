@@ -110,19 +110,19 @@ namespace phoenix
 		renderObject(utils, shader, object, glm::vec3(-3.5f, 1.8f, 2.0f), 0.0f);
 	}
 
-	void ShadowCommon::setUniforms(const phoenix::Shader& shader, const Camera* camera)
+	void ShadowCommon::setUniforms(const Shader& shader, const Camera* camera)
 	{
 		shader.use();
 		shader.setVec3(G_VIEW_POS, camera->_position);
 		shader.setVec3("gLightPos", _lightPos);
 	}
 
-	void ShadowCommon::renderDebugLines(const phoenix::Shader& shader, Utils* utils)
+	void ShadowCommon::renderDebugLines(const Shader& shader, Utils* utils)
 	{
 		shader.use();
 		glm::mat4 world = glm::mat4(1.0f);
 		world = glm::translate(world, _lightPos);
-		shader.setMat4(phoenix::G_WVP, utils->_projection * utils->_view * world);
+		shader.setMat4(G_WVP, utils->_projection * utils->_view * world);
 
 		// Visualize orthographic projection bounds
 		glm::vec3 lightViewForward(glm::normalize(glm::vec3(0.0f) - _lightPos));
@@ -198,12 +198,12 @@ namespace phoenix
 		glBindVertexArray(0);
 	}
 
-	void ShadowCommon::setLightSpaceVP(const phoenix::Shader& shader)
+	void ShadowCommon::setLightSpaceVP(const Shader& shader, const glm::vec3& lightPos, const glm::vec3& lightDirection)
 	{
 		shader.use();
 		glm::mat4 lightProjection, lightView, lightSpaceVP;
 		lightProjection = glm::ortho(-ORTHO_PROJ_HALF_WIDTH, ORTHO_PROJ_HALF_WIDTH, -ORTHO_PROJ_HALF_WIDTH, ORTHO_PROJ_HALF_WIDTH, NEAR_PLANE, FAR_PLANE);
-		lightView = glm::lookAt(_lightPos, TARGET, UP);
+		lightView = glm::lookAt(lightPos, lightDirection, UP);
 		lightSpaceVP = lightProjection * lightView;
 		shader.setMat4(G_LIGHT_SPACE_VP, lightSpaceVP);
 	}

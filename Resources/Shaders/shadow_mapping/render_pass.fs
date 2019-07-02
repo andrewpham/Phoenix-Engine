@@ -199,7 +199,7 @@ void main()
 
     vec3 N = normalize(fs_in.WorldNormal);
     vec3 L = normalize(gLightPos - fs_in.WorldPos);
-    vec3 diffuse = max(dot(N, L), 0.0f) * gLightColor;
+    vec3 diffuse = clamp(dot(N, L), 0.0f, 1.0f) * gLightColor;
 
     vec3 V = normalize(gViewPos - fs_in.WorldPos);
     vec3 H = normalize(L + V);

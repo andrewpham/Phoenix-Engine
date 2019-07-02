@@ -14,14 +14,9 @@ namespace phoenix
 	class Camera
 	{
 	public:
-		glm::vec3 _position;
-		glm::vec3 _forward;
-		glm::vec3 _up;
-		glm::vec3 _right;
+		glm::vec3 _position, _forward, _up, _right;
 
-		float _yaw;
-		float _pitch;
-		float _FOV;
+		float _yaw, _pitch, _FOV;
 
 		Camera();
 

@@ -132,10 +132,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="voxel_cone_tracing.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="framebuffer.h" />
+    <ClInclude Include="renderer.h" />
+    <ClInclude Include="light.h" />
+    <ClInclude Include="material.h" />
+    <ClInclude Include="material_store.h" />
+    <ClInclude Include="voxel_cone_tracing_scene.h" />
     <ClInclude Include="shadow_common.h" />
     <ClInclude Include="strings.h" />
+    <ClInclude Include="texture3D.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="model.h" />
@@ -143,11 +151,19 @@
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="voxel_cone_tracing.cpp" />
     <ClCompile Include="camera.cpp" />
+    <ClCompile Include="framebuffer.cpp" />
+    <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="light.cpp" />
+    <ClCompile Include="material.cpp" />
+    <ClCompile Include="material_store.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="model.cpp" />
+    <ClCompile Include="voxel_cone_tracing_scene.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="shadow_common.cpp" />
+    <ClCompile Include="texture3D.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="stb_image.cpp" />

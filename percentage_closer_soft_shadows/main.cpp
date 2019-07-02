@@ -63,9 +63,9 @@ int main()
 
 	initPointers();
 
-	shadowCommon->_floorTexture = utils->loadTexture("../Resources/Textures/shadow_mapping/wood.png");
-	shadowCommon->_objectTexture = utils->loadTexture("../Resources/Objects/dragon/albedo.png");
-	shadowCommon->_altObjTexture = utils->loadTexture("../Resources/Objects/dragon/blue.png");
+	shadowCommon->_floorTexture = phoenix::Utils::loadTexture("../Resources/Textures/shadow_mapping/wood.png");
+	shadowCommon->_objectTexture = phoenix::Utils::loadTexture("../Resources/Objects/dragon/albedo.png");
+	shadowCommon->_altObjTexture = phoenix::Utils::loadTexture("../Resources/Objects/dragon/blue.png");
 	setupRenderToTexture();
 	// Generate volume textures and fill them with the cosines and sines of random rotation angles for PCSS
 	generateRandom3DTextures();
@@ -219,7 +219,7 @@ void setupRenderToTexture()
 
 void execShadowMapPass(const phoenix::Shader& shader, phoenix::Model& object)
 {
-	shadowCommon->setLightSpaceVP(shader);
+	shadowCommon->setLightSpaceVP(shader, shadowCommon->_lightPos, phoenix::TARGET);
 	glViewport(0, 0, phoenix::SHADOW_MAP_WIDTH, phoenix::SHADOW_MAP_HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
@@ -232,7 +232,7 @@ void execShadowMapPass(const phoenix::Shader& shader, phoenix::Model& object)
 void execRenderPass(const phoenix::Shader& shader, phoenix::Model& object)
 {
 	shadowCommon->setUniforms(shader, camera);
-	shadowCommon->setLightSpaceVP(shader);
+	shadowCommon->setLightSpaceVP(shader, shadowCommon->_lightPos, phoenix::TARGET);
 
 	shadowCommon->changeColorTexture(shadowCommon->_floorTexture);
 	glActiveTexture(GL_TEXTURE1);
@@ -247,7 +247,7 @@ void execRenderPass(const phoenix::Shader& shader, phoenix::Model& object)
 
 void initPointers()
 {
-	shadowCommon = new phoenix::ShadowCommon(phoenix::LIGHT_POS);
+	shadowCommon = new phoenix::ShadowCommon();
 	utils = new phoenix::Utils();
 	camera = new phoenix::Camera();
 }

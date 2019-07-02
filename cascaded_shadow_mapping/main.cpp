@@ -35,6 +35,7 @@ const std::array<float, 4> CASCADE_ENDS{ {phoenix::PERSPECTIVE_NEAR_PLANE, 5.0f,
 phoenix::Camera* camera;
 phoenix::Utils* utils;
 phoenix::ShadowCommon* shadowCommon;
+GLFWwindow* window;
 
 float lastX = static_cast<float>(phoenix::SCREEN_WIDTH) / 2.0f;
 float lastY = static_cast<float>(phoenix::SCREEN_HEIGHT) / 2.0f;
@@ -51,7 +52,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	GLFWwindow* window = glfwCreateWindow(phoenix::SCREEN_WIDTH, phoenix::SCREEN_HEIGHT, "Cascaded Exponential Shadow Mapping", nullptr, nullptr);
+	window = glfwCreateWindow(phoenix::SCREEN_WIDTH, phoenix::SCREEN_HEIGHT, "Cascaded Exponential Shadow Mapping", nullptr, nullptr);
 	if (!window)
 	{
 		std::cerr << phoenix::GLFW_CREATE_WINDOW_ERROR;
@@ -74,9 +75,9 @@ int main()
 
 	initPointers();
 
-	shadowCommon->_floorTexture = utils->loadTexture("../Resources/Textures/shadow_mapping/wood.png");
-	shadowCommon->_objectTexture = utils->loadTexture("../Resources/Objects/dragon/albedo.png");
-	shadowCommon->_altObjTexture = utils->loadTexture("../Resources/Objects/dragon/blue.png");
+	shadowCommon->_floorTexture = phoenix::Utils::loadTexture("../Resources/Textures/shadow_mapping/wood.png");
+	shadowCommon->_objectTexture = phoenix::Utils::loadTexture("../Resources/Objects/dragon/albedo.png");
+	shadowCommon->_altObjTexture = phoenix::Utils::loadTexture("../Resources/Objects/dragon/blue.png");
 	setupRenderToTexture();
 
 	phoenix::Shader renderPassShader("../Resources/Shaders/shadow_mapping/csm_render_pass.vs", "../Resources/Shaders/shadow_mapping/csm_render_pass.fs");
@@ -333,7 +334,7 @@ void bindZBufferForReading()
 
 void initPointers()
 {
-	shadowCommon = new phoenix::ShadowCommon(phoenix::LIGHT_POS);
+	shadowCommon = new phoenix::ShadowCommon();
 	utils = new phoenix::Utils();
 	camera = new phoenix::Camera();
 }

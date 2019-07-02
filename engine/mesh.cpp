@@ -1,9 +1,10 @@
 #include <engine/mesh.h>
+#include <engine/strings.h>
 #include <glad/glad.h>
 
 namespace phoenix
 {
-	Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) : _numIndices(indices.size())
+	Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices, const std::vector<Texture>& textures) : _numIndices(indices.size()), _textures(textures)
 	{
 		glGenVertexArrays(1, &_VAO);
 		unsigned int VBO, EBO;
@@ -35,5 +36,52 @@ namespace phoenix
 		glBindVertexArray(_VAO);
 		glDrawElements(GL_TRIANGLES, _numIndices, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+	}
+
+	void Mesh::render(const Shader& shader)
+	{
+		unsigned int numDiffuseMaps = 0;
+		unsigned int numSpecularMaps = 0;
+		unsigned int numAmbientMaps = 0;
+		unsigned int numBumpMaps = 0;
+		unsigned int numOpacityMaps = 0;
+		for (size_t i = 0; i < _textures.size(); ++i)
+		{
+			glActiveTexture(GL_TEXTURE0 + i);
+
+			std::string name;
+			switch (_textures[i]._textureType)
+			{
+			case DIFFUSE:
+				name = G_DIFFUSE_MAP + std::to_string(numDiffuseMaps++);
+				break;
+			case SPECULAR:
+				name = G_SPECULAR_MAP + std::to_string(numSpecularMaps++);
+				break;
+			case AMBIENT:
+				name = G_AMBIENT_MAP + std::to_string(numAmbientMaps++);
+				break;
+			case HEIGHT:
+				name = G_BUMP_MAP + std::to_string(numBumpMaps++);
+				break;
+			case OPACITY:
+				name = G_OPACITY_MAP + std::to_string(numOpacityMaps++);
+				break;
+			}
+
+			glUniform1i(glGetUniformLocation(shader._program, name.c_str()), i);
+			glBindTexture(GL_TEXTURE_2D, _textures[i]._ID);
+		}
+
+		render();
+	}
+
+	Mesh::~Mesh()
+	{
+		glDeleteVertexArrays(1, &_VAO);
+		if (_material)
+		{
+			delete _material;
+		}
 	}
 }

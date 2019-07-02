@@ -8,7 +8,10 @@ namespace phoenix
 	class Shader
 	{
 	public:
+		unsigned int _program;
+
 		Shader(const char*, const char*);
+		Shader(const char*, const char*, const char*);
 
 		inline void use() const
 		{
@@ -66,7 +69,6 @@ namespace phoenix
 
 	private:
 		static const unsigned int _MSG_LEN = 1024;
-		unsigned int _program;
 
 		void checkCompileErrors(unsigned int, const std::string);
 	};
