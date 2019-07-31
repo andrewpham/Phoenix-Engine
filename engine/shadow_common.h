@@ -16,7 +16,6 @@ namespace phoenix
 
 	// Less tweakable parameters
 	static const unsigned int SHADOW_MAP_WIDTH = 1024, SHADOW_MAP_HEIGHT = 1024;
-	static const float BORDER_COLOR[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	static const glm::vec3 OBJ_SCALE(2.5f, 2.5f, 2.5f);
 	static const glm::vec3 TARGET(-0.26f, 0.0f, -0.94f);
 

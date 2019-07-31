@@ -76,6 +76,18 @@ namespace phoenix
 		{
 			_renderMode = 3;
 		}
+		if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+		{
+			_renderMode = 4;
+		}
+		if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
+		{
+			_renderMode = 5;
+		}
+		if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
+		{
+			_renderMode = 6;
+		}
 	}
 
 	void ShadowCommon::changeColorTexture(unsigned int texture)
@@ -115,6 +127,7 @@ namespace phoenix
 		shader.use();
 		shader.setVec3(G_VIEW_POS, camera->_position);
 		shader.setVec3("gLightPos", _lightPos);
+		shader.setInt("gRenderMode", _renderMode);
 	}
 
 	void ShadowCommon::renderDebugLines(const Shader& shader, Utils* utils)

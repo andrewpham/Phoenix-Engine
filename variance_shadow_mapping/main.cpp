@@ -81,10 +81,10 @@ int main()
 	renderPassShader.setFloat(phoenix::G_SPECULAR_FACTOR, phoenix::SPECULAR_FACTOR);
 	renderPassShader.setFloat(phoenix::G_CORRECTION_FACTOR, CORRECTION_FACTOR);
 	phoenix::Shader shadowMapPassShader("../Resources/Shaders/shadow_mapping/vsm_shadow_map_pass.vs", "../Resources/Shaders/shadow_mapping/vsm_shadow_map_pass.fs");
-	phoenix::Shader zBufferShader("../Resources/Shaders/shadow_mapping/z_buffer.vs", "../Resources/Shaders/shadow_mapping/z_buffer.fs");
-	zBufferShader.use();
-	zBufferShader.setInt(G_DEPTH_MAP, 0);
-	phoenix::Shader blurShader("../Resources/Shaders/shadow_mapping/z_buffer.vs", "../Resources/Shaders/shadow_mapping/blur.fs");
+	phoenix::Shader renderQuadShader("../Resources/Shaders/shadow_mapping/render_quad.vs", "../Resources/Shaders/shadow_mapping/z_buffer.fs");
+	renderQuadShader.use();
+	renderQuadShader.setInt(G_DEPTH_MAP, 0);
+	phoenix::Shader blurShader("../Resources/Shaders/shadow_mapping/render_quad.vs", "../Resources/Shaders/shadow_mapping/blur.fs");
 	blurShader.use();
 	blurShader.setInt(G_DEPTH_MAP, 0);
 	blurShader.setFloat("gResolution", TEXTURE_SIZE);
@@ -122,7 +122,7 @@ int main()
 		}
 		else
 		{
-			utils->renderQuad(zBufferShader, shadowMaps[shadowCommon->_renderMode - 1]);
+			utils->renderQuad(renderQuadShader, shadowMaps[shadowCommon->_renderMode - 1]);
 		}
 
 		glfwSwapBuffers(window);

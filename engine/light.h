@@ -20,4 +20,11 @@ namespace phoenix
 		void setUniforms(const Shader&);
 		void setUniforms(const Shader&, unsigned int);
 	};
+
+	struct DirectLight : public Light
+	{
+		glm::vec3 _direction = glm::vec3(0.09f, -0.04f, -0.04f);
+
+		void setUniforms(const Shader&);
+	};
 }

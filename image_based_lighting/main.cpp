@@ -184,7 +184,7 @@ int main()
 
 	phoenix::Model skull("../Resources/Objects/skull/Skull_Low_res.obj");
 
-	unsigned int equirectangularEnvMap = loadHDRTexture("../Resources/Textures/hdr/Newport_Loft_Ref.hdr");
+	unsigned int equirectangularEnvMap = loadHDRTexture("../Resources/Textures/pbr/Newport_Loft_Ref.hdr");
 
 	setupFramebuffer();
 

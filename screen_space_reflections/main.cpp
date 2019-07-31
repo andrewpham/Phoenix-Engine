@@ -10,7 +10,6 @@
 #include <engine/utils.h>
 #include <engine/framebuffer.h>
 #include <engine/light.h>
-#include <engine/stb_image.h>
 
 #include <array>
 #include <time.h>

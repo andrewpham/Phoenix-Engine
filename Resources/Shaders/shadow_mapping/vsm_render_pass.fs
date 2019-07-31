@@ -23,15 +23,18 @@ float calcShadow(vec4 lightSpacePos)
     vec3 lightSpacePosPostW = lightSpacePos.xyz / lightSpacePos.w;
     lightSpacePosPostW = lightSpacePosPostW * 0.5f + 0.5f;
 
-    // Correction for artifacts from extending beyond the light frustum's far plane.
     if (lightSpacePosPostW.z > 1.0f)
+    {
         return 1.0f;
+    }
 
     vec2 moments = texture(gShadowMap, lightSpacePosPostW.xy).rg;
     float distance = lightSpacePosPostW.z;
 
     if (distance <= moments.x)
+    {
         return 1.0f;
+    }
 
     float variance = moments.y - (moments.x * moments.x);
     variance = max(variance, 0.00002f);

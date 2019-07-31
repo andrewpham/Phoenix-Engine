@@ -1,7 +1,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <engine/shadow_common.h>
-#include <engine/camera.h>
 #include <engine/strings.h>
 #include <engine/common.h>
 
@@ -90,10 +89,10 @@ int main()
 	renderPassShader.setFloat(phoenix::G_AMBIENT_FACTOR, phoenix::AMBIENT_FACTOR);
 	renderPassShader.setFloat(phoenix::G_SPECULAR_FACTOR, phoenix::SPECULAR_FACTOR);
 	renderPassShader.setFloat(phoenix::G_CORRECTION_FACTOR, CORRECTION_FACTOR);
-	phoenix::Shader shadowMapPassShader("../Resources/Shaders/shadow_mapping/shadow_map_pass.vs", "../Resources/Shaders/shadow_mapping/shadow_map_pass.fs");
-	phoenix::Shader zBufferShader("../Resources/Shaders/shadow_mapping/z_buffer.vs", "../Resources/Shaders/shadow_mapping/z_buffer.fs");
-	zBufferShader.use();
-	zBufferShader.setInt(phoenix::G_DEPTH_MAP, 0);
+	phoenix::Shader shadowMapPassShader("../Resources/Shaders/shadow_mapping/csm_shadow_map_pass.vs", "../Resources/Shaders/shadow_mapping/csm_shadow_map_pass.fs");
+	phoenix::Shader renderQuadShader("../Resources/Shaders/shadow_mapping/render_quad.vs", "../Resources/Shaders/shadow_mapping/z_buffer.fs");
+	renderQuadShader.use();
+	renderQuadShader.setInt(phoenix::G_DEPTH_MAP, 0);
 
 	phoenix::Model dragon("../Resources/Objects/dragon/dragon.obj");
 
@@ -124,7 +123,7 @@ int main()
 		}
 		else
 		{
-			utils->renderQuad(zBufferShader, shadowMaps[shadowCommon->_renderMode - 1]);
+			utils->renderQuad(renderQuadShader, shadowMaps[shadowCommon->_renderMode - 1]);
 		}
 
 		glfwSwapBuffers(window);

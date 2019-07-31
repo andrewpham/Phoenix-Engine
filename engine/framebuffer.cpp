@@ -1,10 +1,11 @@
 #include <engine/framebuffer.h>
 #include <engine/strings.h>
+#include <engine/common.h>
 #include <iostream>
 
 namespace phoenix
 {
-	void Framebuffer::genColorMemoryAttachment()
+	void Framebuffer::genColorMemoryAttachment(bool clampToBorder)
 	{
 		glGenTextures(1, &_textureID);
 		glBindTexture(GL_TEXTURE_2D, _textureID);
@@ -12,8 +13,17 @@ namespace phoenix
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		if (clampToBorder)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, phoenix::BORDER_COLOR);
+		}
+		else
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
 	}
 
 	void Framebuffer::setZBufferMemoryAttachment()
@@ -45,10 +55,10 @@ namespace phoenix
 		unbindFBOAndZBufferAttachment();
 	}
 
-	Framebuffer::Framebuffer(unsigned int width, unsigned int height) : _width(width), _height(height)
+	Framebuffer::Framebuffer(unsigned int width, unsigned int height, bool clampToBorder) : _width(width), _height(height)
 	{
 		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_previousFBO);
-		genColorMemoryAttachment();
+		genColorMemoryAttachment(clampToBorder);
 		setupFramebuffer();
 	}
 
@@ -59,7 +69,7 @@ namespace phoenix
 		shader.setInt(name, textureUnit);
 	}
 
-	unsigned int Framebuffer::genAttachment(GLenum internalFormat, GLenum format, GLenum type, GLenum minFilter, GLenum magFilter)
+	unsigned int Framebuffer::genAttachment(GLenum internalFormat, GLenum format, GLenum type, bool clampToBorder, GLenum minFilter, GLenum magFilter)
 	{
 		unsigned int textureID;
 
@@ -69,6 +79,12 @@ namespace phoenix
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+		if (clampToBorder)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, phoenix::BORDER_COLOR);
+		}
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + _numAttachments++, GL_TEXTURE_2D, textureID, 0);
 
 		return textureID;

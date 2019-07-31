@@ -46,9 +46,9 @@ uniform PointLight gPointLight;
 uniform vec3 gViewPos;
 uniform sampler3D gTexture3D;
 
-vec3 N = normalize(WorldNormal);
-vec3 V = normalize(WorldPos - gViewPos);
-vec3 R = reflect(V, N);
+const vec3 N = normalize(WorldNormal);
+const vec3 V = normalize(WorldPos - gViewPos);
+const vec3 R = reflect(V, N);
 
 bool isInsideUnitCube(vec3 p)
 {

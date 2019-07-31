@@ -21,4 +21,11 @@ namespace phoenix
 		shader.setFloat("gPointLights[" + std::to_string(index) + "]._attenuation._linear", _attenuation._linear);
 		shader.setFloat("gPointLights[" + std::to_string(index) + "]._attenuation._quadratic", _attenuation._quadratic);
 	}
+
+	void DirectLight::setUniforms(const Shader& shader)
+	{
+		shader.setVec3("gDirectLight._direction", _direction);
+		shader.setVec3("gDirectLight._light._color", _color);
+		shader.setFloat("gDirectLight._light._intensity", _intensity);
+	}
 }

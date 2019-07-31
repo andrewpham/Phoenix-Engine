@@ -9,6 +9,7 @@ namespace phoenix
 		ORTHO_PROJ_HALF_WIDTH = 10.0f, MAX_CAMERA_PITCH = 89.0f, AMBIENT_FACTOR = 0.3f, SPECULAR_FACTOR = 64.0f;
 	static const float CAMERA_YAW = -48.3996f; // Initial yaw of our camera
 	static const float CAMERA_PITCH = -8.4003f; // Initial pitch of our camera
+	static const float BORDER_COLOR[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	static const unsigned int SCREEN_WIDTH = 2560, SCREEN_HEIGHT = 1440;
 
