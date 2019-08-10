@@ -127,7 +127,7 @@ namespace phoenix
 		shader.use();
 		shader.setVec3(G_VIEW_POS, camera->_position);
 		shader.setVec3("gLightPos", _lightPos);
-		shader.setInt("gRenderMode", _renderMode);
+		shader.setInt(G_RENDER_MODE, _renderMode);
 	}
 
 	void ShadowCommon::renderDebugLines(const Shader& shader, Utils* utils)

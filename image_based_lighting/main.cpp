@@ -27,18 +27,19 @@ void unbindFBOAndZBufferAttachment();
 
 void setupFramebuffer();
 unsigned int loadHDRTexture(char const*);
-unsigned int generateCubemapTexture(int, bool);
+unsigned int generateCubemapTexture(int, bool, bool = false);
 void setInputTexture(const phoenix::Shader&, unsigned int, bool);
 void renderToCubemap(const phoenix::Shader&, unsigned int, int, int);
+// For writing to spherical harmonic coefficient render targets
+void renderToCubemaps(const phoenix::Shader&);
 unsigned int integrateBRDF(const phoenix::Shader&);
 void resetViewportToFramebufferSize();
 
-// Renderbuffer and BRDF LUT resolution
+// Environment map, BRDF LUT, and spherical harmonic coefficient render target resolution
 const int RESOLUTION = 512;
 const int IRRADIANCE_MAP_RES = 32, PREFILTERED_ENV_MAP_RES = 128;
 const unsigned int NUM_FACES = 6, NUM_MIP_LEVELS = 5;
 
-// Uniform names
 const std::string G_ENV_MAP = "gEnvMap";
 
 phoenix::Camera* camera;
@@ -51,17 +52,26 @@ float lastY = static_cast<float>(phoenix::SCREEN_HEIGHT) / 2.0f;
 bool calibratedCursor = false;
 bool renderBRDFIntegrationMap = false;
 
-// Meshes
 unsigned int renderMode = 0;
 unsigned int FBO, RBO;
+// Spherical harmonic coefficients representations
+unsigned int L00, L1_1, L10, L11, L2_2, L2_1, L20, L21, L22;
 
-const std::array<glm::vec3, 4> LIGHT_POSITIONS{ {
+const std::array<glm::vec3, 8> LIGHT_POSITIONS{ {
+	glm::vec3(-10.0f, 10.0f, -10.0f),
+	glm::vec3(10.0f, 10.0f, -10.0f),
+	glm::vec3(-10.0f, -10.0f, -10.0f),
+	glm::vec3(10.0f, -10.0f, -10.0f),
 	glm::vec3(-10.0f, 10.0f, 10.0f),
 	glm::vec3(10.0f, 10.0f, 10.0f),
 	glm::vec3(-10.0f, -10.0f, 10.0f),
-	glm::vec3(10.0f, -10.0f, 10.0f),
+	glm::vec3(10.0f, -10.0f, 10.0f)
 } };
-const std::array<glm::vec3, 4> LIGHT_COLORS{ {
+const std::array<glm::vec3, 8> LIGHT_COLORS{ {
+	glm::vec3(300.0f, 300.0f, 300.0f),
+	glm::vec3(300.0f, 300.0f, 300.0f),
+	glm::vec3(300.0f, 300.0f, 300.0f),
+	glm::vec3(300.0f, 300.0f, 300.0f),
 	glm::vec3(300.0f, 300.0f, 300.0f),
 	glm::vec3(300.0f, 300.0f, 300.0f),
 	glm::vec3(300.0f, 300.0f, 300.0f),
@@ -69,12 +79,12 @@ const std::array<glm::vec3, 4> LIGHT_COLORS{ {
 } };
 const glm::mat4 CUBEMAP_PROJ = glm::perspective(glm::radians(90.0f), 1.0f, phoenix::PERSPECTIVE_NEAR_PLANE, phoenix::PERSPECTIVE_FAR_PLANE / 10.0f);
 const std::array<glm::mat4, 6> CUBEMAP_VIEWS{ {
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))
 } };
 
 int main()
@@ -111,14 +121,23 @@ int main()
 
 	phoenix::Shader renderShader("../Resources/Shaders/pbr/render.vs", "../Resources/Shaders/pbr/render.fs");
 	renderShader.use();
-	renderShader.setInt("gIrradianceMap", 0);
-	renderShader.setInt("gPrefilteredEnvMap", 1);
-	renderShader.setInt("gBRDFIntegrationMap", 2);
-	renderShader.setInt("gAlbedoMap", 3);
-	renderShader.setInt(phoenix::G_NORMAL_MAP, 4);
-	renderShader.setInt("gMetallicMap", 5);
-	renderShader.setInt("gRoughnessMap", 6);
-	renderShader.setInt("gAOMap", 7);
+	renderShader.setInt("gL00", 0);
+	renderShader.setInt("gL1_1", 1);
+	renderShader.setInt("gL10", 2);
+	renderShader.setInt("gL11", 3);
+	renderShader.setInt("gL2_2", 4);
+	renderShader.setInt("gL2_1", 5);
+	renderShader.setInt("gL20", 6);
+	renderShader.setInt("gL21", 7);
+	renderShader.setInt("gL22", 8);
+	renderShader.setInt("gIrradianceMap", 9);
+	renderShader.setInt("gPrefilteredEnvMap", 10);
+	renderShader.setInt("gBRDFIntegrationMap", 11);
+	renderShader.setInt("gAlbedoMap", 12);
+	renderShader.setInt(phoenix::G_NORMAL_MAP, 13);
+	renderShader.setInt("gMetallicMap", 14);
+	renderShader.setInt("gRoughnessMap", 15);
+	renderShader.setInt("gAOMap", 16);
 	for (size_t i = 0; i < LIGHT_POSITIONS.size(); ++i)
 	{
 		renderShader.setVec3("gLightPositions[" + std::to_string(i) + "]", LIGHT_POSITIONS[i]);
@@ -130,6 +149,13 @@ int main()
 	phoenix::Shader irradianceMapShader("../Resources/Shaders/pbr/precompute.vs", "../Resources/Shaders/pbr/irradiance_map.fs");
 	irradianceMapShader.use();
 	irradianceMapShader.setInt(G_ENV_MAP, 0);
+	phoenix::Shader genSHCoefficientsShader("../Resources/Shaders/pbr/precompute.vs", "../Resources/Shaders/pbr/gen_sh_coefficients.fs");
+	genSHCoefficientsShader.use();
+	genSHCoefficientsShader.setInt(G_ENV_MAP, 0);
+	// Extra pass for the L22 coefficient render target
+	phoenix::Shader genSHCoefficientShader("../Resources/Shaders/pbr/precompute.vs", "../Resources/Shaders/pbr/gen_sh_coefficient.fs");
+	genSHCoefficientShader.use();
+	genSHCoefficientShader.setInt(G_ENV_MAP, 0);
 	phoenix::Shader prefilterEnvMapShader("../Resources/Shaders/pbr/precompute.vs", "../Resources/Shaders/pbr/prefilter_env_map.fs");
 	prefilterEnvMapShader.use();
 	prefilterEnvMapShader.setInt(G_ENV_MAP, 0);
@@ -201,6 +227,52 @@ int main()
 	setInputTexture(irradianceMapShader, envMap, true);
 	renderToCubemap(irradianceMapShader, irradianceMap, IRRADIANCE_MAP_RES, 0);
 
+	// (Spherical Harmonics) Generate the 9 lighting coefficients for our environment
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+	L00 = generateCubemapTexture(RESOLUTION, true, true);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	L1_1 = generateCubemapTexture(RESOLUTION, true, true);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	L10 = generateCubemapTexture(RESOLUTION, true, true);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	L11 = generateCubemapTexture(RESOLUTION, true, true);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	L2_2 = generateCubemapTexture(RESOLUTION, true, true);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	L2_1 = generateCubemapTexture(RESOLUTION, true, true);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	L20 = generateCubemapTexture(RESOLUTION, true, true);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	L21 = generateCubemapTexture(RESOLUTION, true, true);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	L22 = generateCubemapTexture(RESOLUTION, true, true);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	setInputTexture(genSHCoefficientsShader, envMap, true);
+	renderToCubemaps(genSHCoefficientsShader);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, L00);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, L1_1);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, L10);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, L11);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, L2_2);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, L2_1);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, L20);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, L21);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	setInputTexture(genSHCoefficientShader, envMap, true);
+	renderToCubemap(genSHCoefficientShader, L22, RESOLUTION, 0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, L22);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
 	// Now precompute the first of two prefiltered textures that collectively describe the specular radiance thanks
 	// to Karis' split sum approximation. The basic idea here is to blur our environment map with corresponding
 	// roughness factors, such that the higher mipmap levels store convolutions of increasing roughness
@@ -234,25 +306,44 @@ int main()
 
 		renderShader.use();
 		renderShader.setVec3(phoenix::G_VIEW_POS, camera->_position);
+		renderShader.setInt(phoenix::G_RENDER_MODE, renderMode);
 
 		// Bind precomputed IBL data
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, L00);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, prefilteredEnvMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, L1_1);
 		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, L10);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, L11);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, L2_2);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, L2_1);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, L20);
+		glActiveTexture(GL_TEXTURE7);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, L21);
+		glActiveTexture(GL_TEXTURE8);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, L22);
+		glActiveTexture(GL_TEXTURE9);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
+		glActiveTexture(GL_TEXTURE10);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, prefilteredEnvMap);
+		glActiveTexture(GL_TEXTURE11);
 		glBindTexture(GL_TEXTURE_2D, BRDFIntegrationMap);
 
 		// Render scene
-		glActiveTexture(GL_TEXTURE3);
+		glActiveTexture(GL_TEXTURE12);
 		glBindTexture(GL_TEXTURE_2D, ironAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
+		glActiveTexture(GL_TEXTURE13);
 		glBindTexture(GL_TEXTURE_2D, ironNormalMap);
-		glActiveTexture(GL_TEXTURE5);
+		glActiveTexture(GL_TEXTURE14);
 		glBindTexture(GL_TEXTURE_2D, ironMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
+		glActiveTexture(GL_TEXTURE15);
 		glBindTexture(GL_TEXTURE_2D, ironRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
+		glActiveTexture(GL_TEXTURE16);
 		glBindTexture(GL_TEXTURE_2D, defaultAOMap);
 
 		glm::mat4 world = glm::mat4(1.0f);
@@ -262,15 +353,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		utils->renderSphere();
 
-		glActiveTexture(GL_TEXTURE3);
+		glActiveTexture(GL_TEXTURE12);
 		glBindTexture(GL_TEXTURE_2D, goldAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
+		glActiveTexture(GL_TEXTURE13);
 		glBindTexture(GL_TEXTURE_2D, goldNormalMap);
-		glActiveTexture(GL_TEXTURE5);
+		glActiveTexture(GL_TEXTURE14);
 		glBindTexture(GL_TEXTURE_2D, goldMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
+		glActiveTexture(GL_TEXTURE15);
 		glBindTexture(GL_TEXTURE_2D, goldRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
+		glActiveTexture(GL_TEXTURE16);
 		glBindTexture(GL_TEXTURE_2D, defaultAOMap);
 
 		world = glm::mat4(1.0f);
@@ -280,15 +371,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		utils->renderSphere();
 
-		glActiveTexture(GL_TEXTURE3);
+		glActiveTexture(GL_TEXTURE12);
 		glBindTexture(GL_TEXTURE_2D, woodAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
+		glActiveTexture(GL_TEXTURE13);
 		glBindTexture(GL_TEXTURE_2D, woodNormalMap);
-		glActiveTexture(GL_TEXTURE5);
+		glActiveTexture(GL_TEXTURE14);
 		glBindTexture(GL_TEXTURE_2D, woodMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
+		glActiveTexture(GL_TEXTURE15);
 		glBindTexture(GL_TEXTURE_2D, woodRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
+		glActiveTexture(GL_TEXTURE16);
 		glBindTexture(GL_TEXTURE_2D, woodAOMap);
 
 		world = glm::mat4(1.0f);
@@ -298,15 +389,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		utils->renderSphere();
 
-		glActiveTexture(GL_TEXTURE3);
+		glActiveTexture(GL_TEXTURE12);
 		glBindTexture(GL_TEXTURE_2D, plasticAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
+		glActiveTexture(GL_TEXTURE13);
 		glBindTexture(GL_TEXTURE_2D, plasticNormalMap);
-		glActiveTexture(GL_TEXTURE5);
+		glActiveTexture(GL_TEXTURE14);
 		glBindTexture(GL_TEXTURE_2D, plasticMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
+		glActiveTexture(GL_TEXTURE15);
 		glBindTexture(GL_TEXTURE_2D, plasticRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
+		glActiveTexture(GL_TEXTURE16);
 		glBindTexture(GL_TEXTURE_2D, plasticAOMap);
 
 		world = glm::mat4(1.0f);
@@ -316,15 +407,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		utils->renderSphere();
 
-		glActiveTexture(GL_TEXTURE3);
+		glActiveTexture(GL_TEXTURE12);
 		glBindTexture(GL_TEXTURE_2D, marbleAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
+		glActiveTexture(GL_TEXTURE13);
 		glBindTexture(GL_TEXTURE_2D, marbleNormalMap);
-		glActiveTexture(GL_TEXTURE5);
+		glActiveTexture(GL_TEXTURE14);
 		glBindTexture(GL_TEXTURE_2D, marbleMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
+		glActiveTexture(GL_TEXTURE15);
 		glBindTexture(GL_TEXTURE_2D, marbleRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
+		glActiveTexture(GL_TEXTURE16);
 		glBindTexture(GL_TEXTURE_2D, defaultAOMap);
 
 		world = glm::mat4(1.0f);
@@ -334,15 +425,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		utils->renderSphere();
 
-		glActiveTexture(GL_TEXTURE3);
+		glActiveTexture(GL_TEXTURE12);
 		glBindTexture(GL_TEXTURE_2D, gunAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
+		glActiveTexture(GL_TEXTURE13);
 		glBindTexture(GL_TEXTURE_2D, gunNormalMap);
-		glActiveTexture(GL_TEXTURE5);
+		glActiveTexture(GL_TEXTURE14);
 		glBindTexture(GL_TEXTURE_2D, gunMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
+		glActiveTexture(GL_TEXTURE15);
 		glBindTexture(GL_TEXTURE_2D, gunRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
+		glActiveTexture(GL_TEXTURE16);
 		glBindTexture(GL_TEXTURE_2D, gunAOMap);
 
 		world = glm::mat4(1.0f);
@@ -354,15 +445,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		gun.render();
 
-		glActiveTexture(GL_TEXTURE3);
+		glActiveTexture(GL_TEXTURE12);
 		glBindTexture(GL_TEXTURE_2D, skullAlbedoMap);
-		glActiveTexture(GL_TEXTURE4);
+		glActiveTexture(GL_TEXTURE13);
 		glBindTexture(GL_TEXTURE_2D, skullNormalMap);
-		glActiveTexture(GL_TEXTURE5);
+		glActiveTexture(GL_TEXTURE14);
 		glBindTexture(GL_TEXTURE_2D, skullMetallicMap);
-		glActiveTexture(GL_TEXTURE6);
+		glActiveTexture(GL_TEXTURE15);
 		glBindTexture(GL_TEXTURE_2D, skullRoughnessMap);
-		glActiveTexture(GL_TEXTURE7);
+		glActiveTexture(GL_TEXTURE16);
 		glBindTexture(GL_TEXTURE_2D, skullAOMap);
 
 		world = glm::mat4(1.0f);
@@ -377,13 +468,9 @@ int main()
 		skyboxShader.use();
 		skyboxShader.setMat4(phoenix::G_VP, utils->_projection * glm::mat4(glm::mat3(utils->_view)));
 		glActiveTexture(GL_TEXTURE0);
-		if (renderMode == 0)
+		if (renderMode != 1)
 		{
 			glBindTexture(GL_TEXTURE_CUBE_MAP, envMap);
-		}
-		else if (renderMode == 1)
-		{
-			glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
 		}
 		else
 		{
@@ -550,7 +637,7 @@ unsigned int loadHDRTexture(char const* filename)
 	return textureID;
 }
 
-unsigned int generateCubemapTexture(int resolution, bool useMipmap)
+unsigned int generateCubemapTexture(int resolution, bool useMipmap, bool highRes)
 {
 	unsigned int textureID;
 
@@ -558,7 +645,7 @@ unsigned int generateCubemapTexture(int resolution, bool useMipmap)
 	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 	for (size_t i = 0; i < NUM_FACES; ++i)
 	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, resolution, resolution, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, highRes ? GL_RGB32F : GL_RGB16F, resolution, resolution, 0, GL_RGB, GL_FLOAT, nullptr);
 	}
 
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -584,6 +671,28 @@ void renderToCubemap(const phoenix::Shader& shader, unsigned int texture, int re
 	for (size_t i = 0; i < NUM_FACES; ++i)
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, texture, level);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		shader.setMat4(phoenix::G_VP, CUBEMAP_PROJ * CUBEMAP_VIEWS[i]);
+		utils->renderCube();
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void renderToCubemaps(const phoenix::Shader& shader)
+{
+	setZBufferMemoryAttachment(RESOLUTION);
+	glViewport(0, 0, RESOLUTION, RESOLUTION);
+	for (size_t i = 0; i < NUM_FACES; ++i)
+	{
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L00, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L1_1, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L10, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L11, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L2_2, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L2_1, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT6, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L20, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT7, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L21, 0);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shader.setMat4(phoenix::G_VP, CUBEMAP_PROJ * CUBEMAP_VIEWS[i]);
