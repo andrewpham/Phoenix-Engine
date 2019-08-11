@@ -102,14 +102,14 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 
 void main()
 {
-    float metalness = texture2D(gMetallicMap, TexCoords).r;
+    float metalness = texture(gMetallicMap, TexCoords).r;
     if (metalness < 0.01f)
     {
         FragColor = texture(gPreviousFrameMap, TexCoords);
         return;
     }
 
-    vec3 N = normalize(vec3(texture2D(gNormalMap, TexCoords) * gInverseViewMatrix)); // View space
+    vec3 N = normalize(vec3(texture(gNormalMap, TexCoords) * gInverseViewMatrix)); // View space
     vec3 P = texture(gPositionMap, TexCoords).xyz; // View space
     vec3 albedo = texture(gPreviousFrameMap, TexCoords).rgb;
     float specular = texture(gAlbedoSpecularMap, TexCoords).w;

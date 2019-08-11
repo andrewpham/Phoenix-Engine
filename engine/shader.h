@@ -10,6 +10,7 @@ namespace phoenix
 	public:
 		unsigned int _program;
 
+		Shader(const char*);
 		Shader(const char*, const char*);
 		Shader(const char*, const char*, const char*);
 

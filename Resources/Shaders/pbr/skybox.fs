@@ -3,7 +3,7 @@ out vec4 FragColor;
 
 const float PI = 3.14159265359f;
 // Cosine lobe convolution factors
-const float A0 = 3.141593f;
+const float A0 = PI;
 const float A1 = 2.094395f;
 const float A2 = 0.785398f;
 

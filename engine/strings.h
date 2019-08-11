@@ -27,6 +27,7 @@ namespace phoenix
 	static const std::string G_METALNESS = "gMetalness";
 	static const std::string G_TEXTURE_3D = "gTexture3D";
 	static const std::string G_RENDER_MODE = "gRenderMode";
+	static const std::string G_OUTPUT = "gOutput";
 
 	// Error messages
 	static const std::string GLFW_CREATE_WINDOW_ERROR = "Failed to create GLFW window!\n";

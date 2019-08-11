@@ -6,6 +6,45 @@
 
 namespace phoenix
 {
+	Shader::Shader(const char* cShaderFilename)
+	{
+		std::string cShaderStr;
+		std::ifstream cShaderFileStream;
+		cShaderFileStream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+		try
+		{
+			cShaderFileStream.open(cShaderFilename);
+
+			std::stringstream cShaderStrStream;
+			cShaderStrStream << cShaderFileStream.rdbuf();
+
+			cShaderFileStream.close();
+
+			cShaderStr = cShaderStrStream.str();
+		}
+		catch (std::ifstream::failure e)
+		{
+			std::cerr << FILE_STREAM_OPEN_ERROR;
+		}
+
+		const char* cShaderCode = cShaderStr.c_str();
+
+		unsigned int cShader;
+
+		cShader = glCreateShader(GL_COMPUTE_SHADER);
+		glShaderSource(cShader, 1, &cShaderCode, nullptr);
+		glCompileShader(cShader);
+		checkCompileErrors(cShader, "compute");
+
+		_program = glCreateProgram();
+		glAttachShader(_program, cShader);
+		glLinkProgram(_program);
+		checkCompileErrors(_program, "program");
+
+		glDeleteShader(cShader);
+	}
+
 	Shader::Shader(const char* vShaderFilename, const char* fShaderFilename)
 	{
 		std::string vShaderStr;

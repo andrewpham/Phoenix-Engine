@@ -1,0 +1,131 @@
+#version 460 core
+layout (local_size_x = 16, local_size_y = 16) in;
+
+const int NUM_LIGHTS = 4096;
+const int MAX_LIGHTS_PER_TILE = 160;
+const int WORK_GROUP_SIZE = 16;
+const float SPECULAR_FACTOR = 16.0f;
+const float SCREEN_WIDTH = 2560.0f;
+const float SCREEN_HEIGHT = 1440.0f;
+
+struct PointLight
+{
+    vec3 _color;
+    float _radius;
+    vec3 _position;
+};
+
+layout (binding = 0, rgba32f) uniform readonly image2D gNormalMap;
+layout (binding = 1, rgba32f) uniform readonly image2D gAlbedoSpecularMap;
+layout (binding = 2, rgba32f) uniform writeonly image2D gOutput;
+layout (std430, binding = 3) buffer LightsBuffer
+{
+    PointLight gPointLights[];
+};
+
+uniform mat4 gProjectionMatrix;
+uniform mat4 gViewMatrix;
+uniform mat4 gInverseVP;
+uniform vec3 gViewPos;
+
+shared uint sVisibleLightIndices[NUM_LIGHTS];
+shared int sNumVisibleLights = 0;
+
+vec3 calcWorldPos(vec2 uv, float depth)
+{
+    // Undo the perspective division
+    vec4 clipSpacePos = vec4(uv * 2.0f - 1.0f, depth, 1.0f);
+    clipSpacePos = gInverseVP * clipSpacePos;
+    return clipSpacePos.xyz / clipSpacePos.w;
+}
+
+vec4 calcLighting(PointLight pointLight, vec3 P, vec3 N, vec3 V, vec4 albedoSpecular)
+{
+    float distance = length(pointLight._position - P);
+    if (distance > pointLight._radius)
+    {
+        return vec4(0.0f);
+    }
+
+    float attenuation = 1.0f - distance / pointLight._radius;
+
+    vec3 L = normalize(pointLight._position - P);
+    vec3 diffuse = clamp(dot(N, L), 0.0f, 1.0f) * pointLight._color * albedoSpecular.rgb;
+
+    vec3 H = normalize(L + V);
+    vec3 specular = pow(clamp(dot(N, H), 0.0f, 1.0f), SPECULAR_FACTOR) * pointLight._color * albedoSpecular.a;
+
+    return vec4((diffuse + specular) * attenuation, 0.0f);
+}
+
+
+void main()
+{
+    vec2 center = vec2(SCREEN_WIDTH, SCREEN_HEIGHT) / float(2 * WORK_GROUP_SIZE); // Location of the middle work group
+    vec2 offset = center - vec2(gl_WorkGroupID.xy);
+
+    // Extract the viewing frustum planes (normals)
+    // https://gamedev.stackexchange.com/questions/156743/finding-the-normals-of-the-planes-of-a-view-frustum
+    vec4 column0 = vec4(-gProjectionMatrix[0][0] * center.x, gProjectionMatrix[0][1], offset.x, gProjectionMatrix[0][3]); // (-2 * n' / (r - l) * 80, 0, offset.x, 0)
+    vec4 column1 = vec4(gProjectionMatrix[1][0], -gProjectionMatrix[1][1] * center.y, offset.y, gProjectionMatrix[1][3]); // (0, -2 * n' / (t - b) * 45, offset.y, 0)
+    vec4 column3 = vec4(gProjectionMatrix[3][0], gProjectionMatrix[3][1], -1.0f, gProjectionMatrix[3][3]); // (0, 0, -1, 0)
+
+    vec4 frustumPlanes[4];
+    // Left
+    frustumPlanes[0] = column3 + column0;
+    // Right
+    frustumPlanes[1] = column3 - column0;
+    // Top
+    frustumPlanes[2] = column3 - column1;
+    // Bottom
+    frustumPlanes[3] = column3 + column1;
+    for (int i = 0; i < 4; ++i)
+    {
+        frustumPlanes[i] /= length(frustumPlanes[i].xyz);
+    }
+
+    int numThreads = WORK_GROUP_SIZE * WORK_GROUP_SIZE; // 16x16x1 sized thread group; 16x16 tile
+    int numPasses = (NUM_LIGHTS + numThreads - 1) / numThreads; // (4096 + 16^2 - 1) / 16^2 = 16
+    for (int i = 0; i < numPasses; ++i)
+    {
+        // [0-15] * 16^2 + gl_LocalInvocationIndex
+        // Each thread/shader processes using the same relative offset (that is unique to it inside the work group) in the tile,
+        // so that all of the threads in the work group collectively process all of the lights for their relevance to the tile
+        uint lightIndex =  min(i * numThreads + gl_LocalInvocationIndex, NUM_LIGHTS - 1);
+        PointLight pointLight = gPointLights[lightIndex];
+        if (sNumVisibleLights < MAX_LIGHTS_PER_TILE)
+        {
+            bool inFrustum = true;
+            for (int i = 3; i >= 0 && inFrustum; --i)
+            {
+                float distance = dot(frustumPlanes[i], gViewMatrix * vec4(pointLight._position, 1.0f)); // Distance of the point from the plane
+                // https://gamedev.stackexchange.com/questions/79172/checking-if-a-vector-is-contained-inside-a-viewing-frustum
+                inFrustum = -pointLight._radius <= distance;
+            }
+            if (inFrustum)
+            {
+                int mem = atomicAdd(sNumVisibleLights, 1);
+                sVisibleLightIndices[mem] = lightIndex;
+            }
+        }
+    }
+
+    barrier();
+
+    ivec2 texelSpaceTexCoords = ivec2(gl_GlobalInvocationID.xy);
+    vec2 texCoords = vec2(texelSpaceTexCoords.x / SCREEN_WIDTH, texelSpaceTexCoords.y / SCREEN_HEIGHT);
+    vec4 N = imageLoad(gNormalMap, texelSpaceTexCoords);
+    vec3 P = calcWorldPos(texCoords, N.w);
+    vec3 V = normalize(gViewPos - P);
+    vec4 albedoSpecular = imageLoad(gAlbedoSpecularMap, texelSpaceTexCoords);
+
+    vec4 fragColor = vec4(0.1f * albedoSpecular.rgb, 1.0f);
+    for (int i = 0; i < sNumVisibleLights; i++)
+    {
+        fragColor += calcLighting(gPointLights[sVisibleLightIndices[i]], P, N.xyz, V, albedoSpecular);
+    }
+
+    barrier();
+
+    imageStore(gOutput, texelSpaceTexCoords, fragColor);
+}

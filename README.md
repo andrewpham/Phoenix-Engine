@@ -2,7 +2,7 @@
 Real-time physically based renderin'.
 
 ### Features
-Variance shadow mapping with Gaussian filtering using a ping-pong FBO, percentage-closer soft shadows and reflective shadow maps using Poisson disk sampling, cascaded shadow mapping, screen space reflections using deferred shading and ray marching, physically based rendering with image-based lighting, and indirect illumination using voxel cone tracing.
+Variance shadow mapping with Gaussian filtering using a ping-pong FBO, percentage-closer soft shadows and reflective shadow maps using Poisson disk sampling, cascaded shadow mapping, screen space reflections using deferred shading and ray marching, physically based rendering with image-based lighting and a spherical harmonics probe, and indirect illumination using voxel cone tracing.
 
 Mesh loading using Assimp.  
 Texture loading using nothings' stb library.

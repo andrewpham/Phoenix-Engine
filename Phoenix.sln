@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "voxel_cone_tracing", "voxel
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "screen_space_reflections", "screen_space_reflections\screen_space_reflections.vcxproj", "{B76DD90A-F1EB-4C5A-B5D1-5ADFAC0C5B5B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tiled_deferred_shading", "tiled_deferred_shading\tiled_deferred_shading.vcxproj", "{1713B02B-8F2E-4B45-B3F0-3F10F483AE3D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -81,6 +83,14 @@ Global
 		{B76DD90A-F1EB-4C5A-B5D1-5ADFAC0C5B5B}.Release|x64.Build.0 = Release|x64
 		{B76DD90A-F1EB-4C5A-B5D1-5ADFAC0C5B5B}.Release|x86.ActiveCfg = Release|Win32
 		{B76DD90A-F1EB-4C5A-B5D1-5ADFAC0C5B5B}.Release|x86.Build.0 = Release|Win32
+		{1713B02B-8F2E-4B45-B3F0-3F10F483AE3D}.Debug|x64.ActiveCfg = Debug|x64
+		{1713B02B-8F2E-4B45-B3F0-3F10F483AE3D}.Debug|x64.Build.0 = Debug|x64
+		{1713B02B-8F2E-4B45-B3F0-3F10F483AE3D}.Debug|x86.ActiveCfg = Debug|Win32
+		{1713B02B-8F2E-4B45-B3F0-3F10F483AE3D}.Debug|x86.Build.0 = Debug|Win32
+		{1713B02B-8F2E-4B45-B3F0-3F10F483AE3D}.Release|x64.ActiveCfg = Release|x64
+		{1713B02B-8F2E-4B45-B3F0-3F10F483AE3D}.Release|x64.Build.0 = Release|x64
+		{1713B02B-8F2E-4B45-B3F0-3F10F483AE3D}.Release|x86.ActiveCfg = Release|Win32
+		{1713B02B-8F2E-4B45-B3F0-3F10F483AE3D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

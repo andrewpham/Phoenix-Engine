@@ -5,11 +5,11 @@
 
 namespace phoenix
 {
-	void Framebuffer::genColorMemoryAttachment(bool clampToBorder)
+	void Framebuffer::genColorMemoryAttachment(bool clampToBorder, bool hasAlpha)
 	{
 		glGenTextures(1, &_textureID);
 		glBindTexture(GL_TEXTURE_2D, _textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, _width, _height, 0, GL_RGBA, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, hasAlpha ? GL_RGBA32F : GL_RGB16F, _width, _height, 0, GL_RGBA, GL_FLOAT, nullptr);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -55,10 +55,10 @@ namespace phoenix
 		unbindFBOAndZBufferAttachment();
 	}
 
-	Framebuffer::Framebuffer(unsigned int width, unsigned int height, bool clampToBorder) : _width(width), _height(height)
+	Framebuffer::Framebuffer(unsigned int width, unsigned int height, bool clampToBorder, bool hasAlpha) : _width(width), _height(height)
 	{
 		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_previousFBO);
-		genColorMemoryAttachment(clampToBorder);
+		genColorMemoryAttachment(clampToBorder, hasAlpha);
 		setupFramebuffer();
 	}
 

@@ -5,7 +5,7 @@ const float PI = 3.14159265359f;
 const float MAX_REFLECTION_LOD = 4.0f;
 const int NUM_LIGHTS = 4;
 // Cosine lobe convolution factors
-const float A0 = 3.141593f;
+const float A0 = PI;
 const float A1 = 2.094395f;
 const float A2 = 0.785398f;
 
@@ -178,11 +178,6 @@ vec3 calcSHIrradiance(vec3 N)
     return PI * irradiance;
 }
 
-vec3 calcSHDiffuse(vec3 N, vec3 albedo)
-{
-    return  calcSHIrradiance(N) * albedo;
-}
-
 vec3 IBL(vec3 N, vec3 V, vec3 R, vec3 F0, vec3 albedo, float metallic, float roughness, float ao)
 {
     float NoV = clamp(dot(N, V), 0.0f, 1.0f);
@@ -195,7 +190,7 @@ vec3 IBL(vec3 N, vec3 V, vec3 R, vec3 F0, vec3 albedo, float metallic, float rou
     vec3 diffuseColor;
     if (gIrradianceMapLightingMode == 0)
     {
-        diffuseColor = calcSHDiffuse(N, albedo);
+        diffuseColor = calcSHIrradiance(N) * albedo;
     }
     else
     {
