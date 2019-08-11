@@ -3,7 +3,7 @@ out vec4 FragColor;
 
 const float PI = 3.14159265359f;
 const float MAX_REFLECTION_LOD = 4.0f;
-const int NUM_LIGHTS = 8;
+const int NUM_LIGHTS = 4;
 // Cosine lobe convolution factors
 const float A0 = 3.141593f;
 const float A1 = 2.094395f;
@@ -39,7 +39,7 @@ uniform samplerCube gL21;
 uniform samplerCube gL22;
 
 uniform vec3 gViewPos;
-uniform int gRenderMode;
+uniform int gIrradianceMapLightingMode;
 
 uniform vec3 gLightPositions[NUM_LIGHTS];
 uniform vec3 gLightColors[NUM_LIGHTS];
@@ -175,7 +175,7 @@ vec3 calcSHIrradiance(vec3 N)
                    textureLod(gL22, vec3(0.0f, -1.0f, 0.0f), 9.0f).rgb +
                    textureLod(gL22, vec3(0.0f, 0.0f, 1.0f), 9.0f).rgb +
                    textureLod(gL22, vec3(0.0f, 0.0f, -1.0f), 9.0f).rgb) / 6.0f * 0.546274f * (N.x * N.x - N.y * N.y) * A2;
-    return irradiance;
+    return PI * irradiance;
 }
 
 vec3 calcSHDiffuse(vec3 N, vec3 albedo)
@@ -193,7 +193,7 @@ vec3 IBL(vec3 N, vec3 V, vec3 R, vec3 F0, vec3 albedo, float metallic, float rou
 
     // Diffuse IBL
     vec3 diffuseColor;
-    if (gRenderMode == 0)
+    if (gIrradianceMapLightingMode == 0)
     {
         diffuseColor = calcSHDiffuse(N, albedo);
     }
