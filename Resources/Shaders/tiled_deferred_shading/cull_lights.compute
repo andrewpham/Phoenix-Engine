@@ -96,9 +96,9 @@ void main()
         if (sNumVisibleLights < MAX_LIGHTS_PER_TILE)
         {
             bool inFrustum = true;
-            for (int i = 3; i >= 0 && inFrustum; --i)
+            for (int j = 3; j >= 0 && inFrustum; --j)
             {
-                float distance = dot(frustumPlanes[i], gViewMatrix * vec4(pointLight._position, 1.0f)); // Distance of the point from the plane
+                float distance = dot(frustumPlanes[j], gViewMatrix * vec4(pointLight._position, 1.0f)); // Distance of the point from the plane
                 // https://gamedev.stackexchange.com/questions/79172/checking-if-a-vector-is-contained-inside-a-viewing-frustum
                 inFrustum = -pointLight._radius <= distance;
             }
