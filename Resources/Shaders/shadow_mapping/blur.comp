@@ -1,0 +1,55 @@
+#version 460 core
+layout (local_size_x = 16, local_size_y = 16) in;
+
+const float WEIGHTS[9] = float[]
+    (0.0162162162f,
+     0.0540540541f,
+     0.1216216216f,
+     0.1945945946f,
+     0.2270270270f,
+     0.1945945946f,
+     0.1216216216f,
+     0.0540540541f,
+     0.0162162162f);
+const int NUM_THREADS = 256;
+const int NUM_TAPS = 8; // # taps minus the sample in the middle
+const int RADIUS = 3;
+
+layout (binding = 0, rgba32f) uniform readonly image2D gInput;
+layout (binding = 1, rgba32f) uniform writeonly image2D gOutput;
+
+uniform ivec2 gDir;
+
+shared vec4 sTexels[NUM_THREADS + NUM_TAPS * RADIUS];
+
+// 9-tap Gaussian filter
+void main()
+{
+    uint texelIndex = gl_LocalInvocationIndex;
+    ivec2 tc = ivec2(gl_GlobalInvocationID.xy);
+
+    // The leftmost or bottommost texel at which we begin to sample
+    ivec2 start = tc - NUM_TAPS / 2 * RADIUS * gDir;
+    sTexels[texelIndex] = imageLoad(gInput, start);
+    // Since we want the last threads in the workgroup to have coherent sample data
+    // (i.e. its range of texels to sample from fully accounted for), we'll get
+    // the first 8 * RADIUS (i.e. twice the number of samples extending from each
+    // side of any given texel) of our threads to deal with those trailing edge cases
+    if (texelIndex < NUM_TAPS * RADIUS)
+    {
+        sTexels[texelIndex + NUM_THREADS] = imageLoad(gInput, start + NUM_THREADS * gDir);
+    }
+
+    // Fundamentally, we are extracting all the relevant texel data for our workgroup,
+    // and then getting each texel to operate with respect to the data in a highly
+    // parallelized fashion
+    barrier();
+
+    vec4 sum = vec4(0.0f);
+    for (int i = 0; i <= NUM_TAPS; ++i)
+    {
+        sum += sTexels[texelIndex + i * RADIUS] * WEIGHTS[i];
+    }
+
+    imageStore(gOutput, tc, vec4(sum.rgb, 1.0f));
+}

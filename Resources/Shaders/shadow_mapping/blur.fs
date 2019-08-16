@@ -22,17 +22,17 @@ void main()
     float vStep = gDir.y;
 
     // 9-tap Gaussian filter
-    sum += texture2D(gDepthMap, vec2(tc.x - 4.0f*blur*hStep, tc.y - 4.0f*blur*vStep)) * 0.0162162162f;
-    sum += texture2D(gDepthMap, vec2(tc.x - 3.0f*blur*hStep, tc.y - 3.0f*blur*vStep)) * 0.0540540541f;
-    sum += texture2D(gDepthMap, vec2(tc.x - 2.0f*blur*hStep, tc.y - 2.0f*blur*vStep)) * 0.1216216216f;
-    sum += texture2D(gDepthMap, vec2(tc.x - 1.0f*blur*hStep, tc.y - 1.0f*blur*vStep)) * 0.1945945946f;
+    sum += texture(gDepthMap, vec2(tc.x - 4.0f*blur*hStep, tc.y - 4.0f*blur*vStep)) * 0.0162162162f;
+    sum += texture(gDepthMap, vec2(tc.x - 3.0f*blur*hStep, tc.y - 3.0f*blur*vStep)) * 0.0540540541f;
+    sum += texture(gDepthMap, vec2(tc.x - 2.0f*blur*hStep, tc.y - 2.0f*blur*vStep)) * 0.1216216216f;
+    sum += texture(gDepthMap, vec2(tc.x - 1.0f*blur*hStep, tc.y - 1.0f*blur*vStep)) * 0.1945945946f;
 
-    sum += texture2D(gDepthMap, tc) * 0.2270270270f;
+    sum += texture(gDepthMap, tc) * 0.2270270270f;
 
-    sum += texture2D(gDepthMap, vec2(tc.x + 1.0f*blur*hStep, tc.y + 1.0f*blur*vStep)) * 0.1945945946f;
-    sum += texture2D(gDepthMap, vec2(tc.x + 2.0f*blur*hStep, tc.y + 2.0f*blur*vStep)) * 0.1216216216f;
-    sum += texture2D(gDepthMap, vec2(tc.x + 3.0f*blur*hStep, tc.y + 3.0f*blur*vStep)) * 0.0540540541f;
-    sum += texture2D(gDepthMap, vec2(tc.x + 4.0f*blur*hStep, tc.y + 4.0f*blur*vStep)) * 0.0162162162f;
+    sum += texture(gDepthMap, vec2(tc.x + 1.0f*blur*hStep, tc.y + 1.0f*blur*vStep)) * 0.1945945946f;
+    sum += texture(gDepthMap, vec2(tc.x + 2.0f*blur*hStep, tc.y + 2.0f*blur*vStep)) * 0.1216216216f;
+    sum += texture(gDepthMap, vec2(tc.x + 3.0f*blur*hStep, tc.y + 3.0f*blur*vStep)) * 0.0540540541f;
+    sum += texture(gDepthMap, vec2(tc.x + 4.0f*blur*hStep, tc.y + 4.0f*blur*vStep)) * 0.0162162162f;
 
     FragColor = vec4(sum.rgb, 1.0f);
 }

@@ -72,7 +72,7 @@ int main()
 	copyLightDataToGPU();
 
 	phoenix::Shader gBufferPassShader("../Resources/Shaders/tiled_deferred_shading/g_buffer_pass.vs", "../Resources/Shaders/tiled_deferred_shading/g_buffer_pass.fs");
-	phoenix::Shader cullLightsShader("../Resources/Shaders/tiled_deferred_shading/cull_lights.compute");
+	phoenix::Shader cullLightsShader("../Resources/Shaders/tiled_deferred_shading/cull_lights.comp");
 	cullLightsShader.use();
 	cullLightsShader.setInt(phoenix::G_NORMAL_MAP, 0);
 	cullLightsShader.setInt(phoenix::G_ALBEDO_SPECULAR_MAP, 1);

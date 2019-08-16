@@ -39,6 +39,14 @@ namespace phoenix
 		{
 			glUniform2f(glGetUniformLocation(_program, name.c_str()), v0, v1);
 		}
+		inline void setIVec2(const std::string& name, const glm::ivec2& value) const
+		{
+			glUniform2iv(glGetUniformLocation(_program, name.c_str()), 1, &value[0]);
+		}
+		inline void setIVec2(const std::string& name, int v0, int v1) const
+		{
+			glUniform2i(glGetUniformLocation(_program, name.c_str()), v0, v1);
+		}
 		inline void setVec3(const std::string& name, const glm::vec3& value) const
 		{
 			glUniform3fv(glGetUniformLocation(_program, name.c_str()), 1, &value[0]);

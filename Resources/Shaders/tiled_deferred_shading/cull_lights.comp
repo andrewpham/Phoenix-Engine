@@ -125,7 +125,5 @@ void main()
         fragColor += calcLighting(gPointLights[sVisibleLightIndices[i]], P, N.xyz, V, albedoSpecular);
     }
 
-    barrier();
-
     imageStore(gOutput, texelSpaceTexCoords, fragColor);
 }
