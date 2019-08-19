@@ -54,7 +54,7 @@ bool isInsideUnitCube()
 
 void main()
 {
-    if(!isInsideUnitCube())
+    if (!isInsideUnitCube())
     {
         return;
     }

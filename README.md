@@ -23,6 +23,7 @@ Glad, GLFW, OpenGL Mathematics (GLM), and Assimp.
 ![](images/vsm_sm.png "Variance Shadow Mapping Shadow Map")
 ![](images/csm.png "Cascaded Shadow Mapping")
 ![](images/ssr.png "Screen Space Reflections")
+![](images/tds.png "Tiled Deferred Shading")
 
 ### Resources
 Brian Karis' [Real Shading in Unreal Engine 4](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf)  
@@ -35,4 +36,7 @@ Cyril Crassin's [Interactive Indirect Illumination Using Voxel Cone Tracing](htt
 Bartlomiej Wronski on [The future of screenspace reflections](https://www.gamasutra.com/blogs/BartlomiejWronski/20140129/209609/The_future_of_screenspace_reflections.php)  
 [Assassin's Creed IV: Black Flag - Road to Next-Gen Graphics](https://www.gdcvault.com/play/1020397/Assassin-s-Creed-IV-Black)  
 [GDC follow-up: Screenspace reflections filtering and up-sampling](https://bartwronski.com/2014/03/23/gdc-follow-up-screenspace-reflections-filtering-and-up-sampling/)  
-Randima Fernando's [Percentage Closer Soft Shadows](http://developer.download.nvidia.com/shaderlibrary/docs/shadow_PCSS.pdf) Paper
+Randima Fernando's [Percentage Closer Soft Shadows](http://developer.download.nvidia.com/shaderlibrary/docs/shadow_PCSS.pdf) Paper  
+Andrew Lauritzen's [Deferred Rendering for Current and Future Rendering Pipelines](https://software.intel.com/sites/default/files/m/d/4/1/d/8/lauritzen_deferred_shading_siggraph_2010.pdf)  
+Johan Andersson on [DirectX 11 Rendering in Battlefield 3](http://www.dice.se/wp-content/uploads/2014/12/GDC11_DX11inBF3_Public.pdf)  
+[NVIDIA Turing GPU Architecture Whitepaper](https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf)

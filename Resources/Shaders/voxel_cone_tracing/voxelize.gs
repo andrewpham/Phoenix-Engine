@@ -28,7 +28,7 @@ void main()
         {
             gl_Position = vec4(WorldPos.x, WorldPos.z, 0.0f, 1.0f);
         }
-	EmitVertex();
+        EmitVertex();
     }
     EndPrimitive();
 }
