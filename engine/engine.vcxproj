@@ -132,6 +132,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="sh.h" />
     <ClInclude Include="voxel_cone_tracing.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="common.h" />
@@ -151,6 +152,7 @@
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="sh.cpp" />
     <ClCompile Include="voxel_cone_tracing.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="framebuffer.cpp" />

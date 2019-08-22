@@ -5,8 +5,8 @@
 #include <engine/utils.h>
 #include <engine/strings.h>
 #include <engine/common.h>
+#include <engine/sh.h>
 
-#include <array>
 #include <iostream>
 
 void framebufferSizeCallback(GLFWwindow*, int, int);
@@ -24,23 +24,18 @@ void unbindFBOAndZBufferAttachment();
 
 void setupFramebuffer();
 unsigned int loadHDRTexture(char const*);
-unsigned int generateCubemapTexture(int, bool, bool = false);
+unsigned int generateCubemapTexture(int, bool);
 void setInputTexture(const phoenix::Shader&, unsigned int, bool);
 void renderToCubemap(const phoenix::Shader&, unsigned int, int, int);
-// For writing to spherical harmonic coefficient render targets
-void renderToCubemaps(const phoenix::Shader&);
-void allocSHTextures();
-void genMipmaps();
-void genSHCoefficients(const phoenix::Shader&, const phoenix::Shader&, unsigned int);
 unsigned int integrateBRDF(const phoenix::Shader&);
 void resetViewportToFramebufferSize();
 
 // Environment map, BRDF LUT, and spherical harmonic coefficient render target resolution
 const int RESOLUTION = 512;
 const int IRRADIANCE_MAP_RES = 32, PREFILTERED_ENV_MAP_RES = 128;
-const unsigned int NUM_FACES = 6, NUM_MIP_LEVELS = 5;
+const unsigned int NUM_MIP_LEVELS = 5;
 
-const std::string G_ENV_MAP = "gEnvMap";
+const std::string G_ENV_MAP = "gEnvMap", G_SH9_COLOR = "gSH9Color";
 
 phoenix::Camera* camera;
 phoenix::Utils* utils;
@@ -54,8 +49,6 @@ bool renderBRDFIntegrationMap = false;
 
 unsigned int renderMode = 0, irradianceMapLightingMode = 0;
 unsigned int FBO, RBO;
-// Spherical harmonic coefficients representations
-unsigned int L00, L1_1, L10, L11, L2_2, L2_1, L20, L21, L22;
 
 const std::array<glm::vec3, 8> LIGHT_POSITIONS{ {
 	glm::vec3(-10.0f, 10.0f, 10.0f),
@@ -113,23 +106,14 @@ int main()
 
 	phoenix::Shader renderShader("../Resources/Shaders/pbr/render.vs", "../Resources/Shaders/pbr/render.fs");
 	renderShader.use();
-	renderShader.setInt("gL00", 0);
-	renderShader.setInt("gL1_1", 1);
-	renderShader.setInt("gL10", 2);
-	renderShader.setInt("gL11", 3);
-	renderShader.setInt("gL2_2", 4);
-	renderShader.setInt("gL2_1", 5);
-	renderShader.setInt("gL20", 6);
-	renderShader.setInt("gL21", 7);
-	renderShader.setInt("gL22", 8);
-	renderShader.setInt("gIrradianceMap", 9);
-	renderShader.setInt("gPrefilteredEnvMap", 10);
-	renderShader.setInt("gBRDFIntegrationMap", 11);
-	renderShader.setInt("gAlbedoMap", 12);
-	renderShader.setInt(phoenix::G_NORMAL_MAP, 13);
-	renderShader.setInt("gMetallicMap", 14);
-	renderShader.setInt("gRoughnessMap", 15);
-	renderShader.setInt("gAOMap", 16);
+	renderShader.setInt("gIrradianceMap", 0);
+	renderShader.setInt("gPrefilteredEnvMap", 1);
+	renderShader.setInt("gBRDFIntegrationMap", 2);
+	renderShader.setInt("gAlbedoMap", 3);
+	renderShader.setInt(phoenix::G_NORMAL_MAP, 4);
+	renderShader.setInt(phoenix::G_METALLIC_MAP, 5);
+	renderShader.setInt("gRoughnessMap", 6);
+	renderShader.setInt("gAOMap", 7);
 	for (size_t i = 0; i < LIGHT_POSITIONS.size(); ++i)
 	{
 		renderShader.setVec3("gLightPositions[" + std::to_string(i) + "]", LIGHT_POSITIONS[i]);
@@ -141,13 +125,6 @@ int main()
 	phoenix::Shader irradianceMapShader("../Resources/Shaders/pbr/precompute.vs", "../Resources/Shaders/pbr/irradiance_map.fs");
 	irradianceMapShader.use();
 	irradianceMapShader.setInt(G_ENV_MAP, 0);
-	phoenix::Shader genSHCoefficientsShader("../Resources/Shaders/pbr/precompute.vs", "../Resources/Shaders/pbr/gen_sh_coefficients.fs");
-	genSHCoefficientsShader.use();
-	genSHCoefficientsShader.setInt(G_ENV_MAP, 0);
-	// Extra pass for the L22 coefficient render target
-	phoenix::Shader genSHCoefficientShader("../Resources/Shaders/pbr/precompute.vs", "../Resources/Shaders/pbr/gen_sh_coefficient.fs");
-	genSHCoefficientShader.use();
-	genSHCoefficientShader.setInt(G_ENV_MAP, 0);
 	phoenix::Shader prefilterEnvMapShader("../Resources/Shaders/pbr/precompute.vs", "../Resources/Shaders/pbr/prefilter_env_map.fs");
 	prefilterEnvMapShader.use();
 	prefilterEnvMapShader.setInt(G_ENV_MAP, 0);
@@ -155,15 +132,7 @@ int main()
 	phoenix::Shader integrateBRDFShader("../Resources/Shaders/pbr/integrateBRDF.vs", "../Resources/Shaders/pbr/integrateBRDF.fs");
 	phoenix::Shader skyboxShader("../Resources/Shaders/pbr/skybox.vs", "../Resources/Shaders/pbr/skybox.fs");
 	skyboxShader.use();
-	skyboxShader.setInt("gSampler0", 0);
-	skyboxShader.setInt("gSampler1", 1);
-	skyboxShader.setInt("gSampler2", 2);
-	skyboxShader.setInt("gSampler3", 3);
-	skyboxShader.setInt("gSampler4", 4);
-	skyboxShader.setInt("gSampler5", 5);
-	skyboxShader.setInt("gSampler6", 6);
-	skyboxShader.setInt("gSampler7", 7);
-	skyboxShader.setInt("gSampler8", 8);
+	skyboxShader.setInt(G_ENV_MAP, 0);
 
 	// PBR Textures
 	unsigned int ironAlbedoMap = phoenix::Utils::loadTexture("../Resources/Textures/pbr/rusted_iron/rustediron2_basecolor.png");
@@ -210,7 +179,7 @@ int main()
 
 	phoenix::Model skull("../Resources/Objects/skull/Skull_Low_res.obj");
 
-	unsigned int equirectangularEnvMap = loadHDRTexture("../Resources/Textures/pbr/Ice_Lake_Ref.hdr");
+	unsigned int equirectangularEnvMap = loadHDRTexture("../Resources/Textures/pbr/Newport_Loft_Ref.hdr");
 
 	setupFramebuffer();
 
@@ -227,7 +196,14 @@ int main()
 	setInputTexture(irradianceMapShader, envMap, true);
 	renderToCubemap(irradianceMapShader, irradianceMap, IRRADIANCE_MAP_RES, 0);
 
-	genSHCoefficients(genSHCoefficientsShader, genSHCoefficientShader, envMap);
+	phoenix::SH9Color lightingCoefficients = phoenix::genLightingCoefficients(envMap, RESOLUTION);
+	for (size_t i = 0; i < lightingCoefficients._coefficients.size(); ++i)
+	{
+		renderShader.use();
+		renderShader.setVec3(G_SH9_COLOR + "[" + std::to_string(i) + "]", lightingCoefficients[i]);
+		skyboxShader.use();
+		skyboxShader.setVec3(G_SH9_COLOR + "[" + std::to_string(i) + "]", lightingCoefficients[i]);
+	}
 
 	// Now precompute the first of two prefiltered textures that collectively describe the specular radiance thanks
 	// to Karis' split sum approximation. The basic idea here is to blur our environment map with corresponding
@@ -266,40 +242,22 @@ int main()
 
 		// Bind precomputed IBL data
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, L00);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, L1_1);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, L10);
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, L11);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, L2_2);
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, L2_1);
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, L20);
-		glActiveTexture(GL_TEXTURE7);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, L21);
-		glActiveTexture(GL_TEXTURE8);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, L22);
-		glActiveTexture(GL_TEXTURE9);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
-		glActiveTexture(GL_TEXTURE10);
+		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, prefilteredEnvMap);
-		glActiveTexture(GL_TEXTURE11);
+		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, BRDFIntegrationMap);
 
 		// Render scene
-		glActiveTexture(GL_TEXTURE12);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, ironAlbedoMap);
-		glActiveTexture(GL_TEXTURE13);
+		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, ironNormalMap);
-		glActiveTexture(GL_TEXTURE14);
+		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, ironMetallicMap);
-		glActiveTexture(GL_TEXTURE15);
+		glActiveTexture(GL_TEXTURE6);
 		glBindTexture(GL_TEXTURE_2D, ironRoughnessMap);
-		glActiveTexture(GL_TEXTURE16);
+		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, defaultAOMap);
 
 		glm::mat4 world = glm::mat4(1.0f);
@@ -309,15 +267,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		utils->renderSphere();
 
-		glActiveTexture(GL_TEXTURE12);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, goldAlbedoMap);
-		glActiveTexture(GL_TEXTURE13);
+		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, goldNormalMap);
-		glActiveTexture(GL_TEXTURE14);
+		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, goldMetallicMap);
-		glActiveTexture(GL_TEXTURE15);
+		glActiveTexture(GL_TEXTURE6);
 		glBindTexture(GL_TEXTURE_2D, goldRoughnessMap);
-		glActiveTexture(GL_TEXTURE16);
+		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, defaultAOMap);
 
 		world = glm::mat4(1.0f);
@@ -327,15 +285,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		utils->renderSphere();
 
-		glActiveTexture(GL_TEXTURE12);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, woodAlbedoMap);
-		glActiveTexture(GL_TEXTURE13);
+		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, woodNormalMap);
-		glActiveTexture(GL_TEXTURE14);
+		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, woodMetallicMap);
-		glActiveTexture(GL_TEXTURE15);
+		glActiveTexture(GL_TEXTURE6);
 		glBindTexture(GL_TEXTURE_2D, woodRoughnessMap);
-		glActiveTexture(GL_TEXTURE16);
+		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, woodAOMap);
 
 		world = glm::mat4(1.0f);
@@ -345,15 +303,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		utils->renderSphere();
 
-		glActiveTexture(GL_TEXTURE12);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, plasticAlbedoMap);
-		glActiveTexture(GL_TEXTURE13);
+		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, plasticNormalMap);
-		glActiveTexture(GL_TEXTURE14);
+		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, plasticMetallicMap);
-		glActiveTexture(GL_TEXTURE15);
+		glActiveTexture(GL_TEXTURE6);
 		glBindTexture(GL_TEXTURE_2D, plasticRoughnessMap);
-		glActiveTexture(GL_TEXTURE16);
+		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, plasticAOMap);
 
 		world = glm::mat4(1.0f);
@@ -363,15 +321,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		utils->renderSphere();
 
-		glActiveTexture(GL_TEXTURE12);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, marbleAlbedoMap);
-		glActiveTexture(GL_TEXTURE13);
+		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, marbleNormalMap);
-		glActiveTexture(GL_TEXTURE14);
+		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, marbleMetallicMap);
-		glActiveTexture(GL_TEXTURE15);
+		glActiveTexture(GL_TEXTURE6);
 		glBindTexture(GL_TEXTURE_2D, marbleRoughnessMap);
-		glActiveTexture(GL_TEXTURE16);
+		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, defaultAOMap);
 
 		world = glm::mat4(1.0f);
@@ -381,15 +339,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		utils->renderSphere();
 
-		glActiveTexture(GL_TEXTURE12);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, gunAlbedoMap);
-		glActiveTexture(GL_TEXTURE13);
+		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, gunNormalMap);
-		glActiveTexture(GL_TEXTURE14);
+		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, gunMetallicMap);
-		glActiveTexture(GL_TEXTURE15);
+		glActiveTexture(GL_TEXTURE6);
 		glBindTexture(GL_TEXTURE_2D, gunRoughnessMap);
-		glActiveTexture(GL_TEXTURE16);
+		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, gunAOMap);
 
 		world = glm::mat4(1.0f);
@@ -401,15 +359,15 @@ int main()
 		renderShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::mat3(world));
 		gun.render();
 
-		glActiveTexture(GL_TEXTURE12);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, skullAlbedoMap);
-		glActiveTexture(GL_TEXTURE13);
+		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, skullNormalMap);
-		glActiveTexture(GL_TEXTURE14);
+		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, skullMetallicMap);
-		glActiveTexture(GL_TEXTURE15);
+		glActiveTexture(GL_TEXTURE6);
 		glBindTexture(GL_TEXTURE_2D, skullRoughnessMap);
-		glActiveTexture(GL_TEXTURE16);
+		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, skullAOMap);
 
 		world = glm::mat4(1.0f);
@@ -436,26 +394,6 @@ int main()
 		else if (renderMode == 2)
 		{
 			glBindTexture(GL_TEXTURE_CUBE_MAP, prefilteredEnvMap);
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_CUBE_MAP, L00);
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, L1_1);
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, L10);
-			glActiveTexture(GL_TEXTURE3);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, L11);
-			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, L2_2);
-			glActiveTexture(GL_TEXTURE5);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, L2_1);
-			glActiveTexture(GL_TEXTURE6);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, L20);
-			glActiveTexture(GL_TEXTURE7);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, L21);
-			glActiveTexture(GL_TEXTURE8);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, L22);
 		}
 		utils->renderCube();
 
@@ -631,15 +569,15 @@ unsigned int loadHDRTexture(char const* filename)
 	return textureID;
 }
 
-unsigned int generateCubemapTexture(int resolution, bool useMipmap, bool highRes)
+unsigned int generateCubemapTexture(int resolution, bool useMipmap)
 {
 	unsigned int textureID;
 
 	glGenTextures(1, &textureID);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-	for (size_t i = 0; i < NUM_FACES; ++i)
+	for (size_t i = 0; i < phoenix::NUM_CUBEMAP_FACES; ++i)
 	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, highRes ? GL_RGB32F : GL_RGB16F, resolution, resolution, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB32F, resolution, resolution, 0, GL_RGB, GL_FLOAT, nullptr);
 	}
 
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -662,7 +600,7 @@ void renderToCubemap(const phoenix::Shader& shader, unsigned int texture, int re
 {
 	setZBufferMemoryAttachment(resolution);
 	glViewport(0, 0, resolution, resolution);
-	for (size_t i = 0; i < NUM_FACES; ++i)
+	for (size_t i = 0; i < phoenix::NUM_CUBEMAP_FACES; ++i)
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, texture, level);
 
@@ -671,86 +609,6 @@ void renderToCubemap(const phoenix::Shader& shader, unsigned int texture, int re
 		utils->renderCube();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void renderToCubemaps(const phoenix::Shader& shader)
-{
-	setZBufferMemoryAttachment(RESOLUTION);
-	glViewport(0, 0, RESOLUTION, RESOLUTION);
-	for (size_t i = 0; i < NUM_FACES; ++i)
-	{
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L00, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L1_1, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L10, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L11, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L2_2, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L2_1, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT6, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L20, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT7, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, L21, 0);
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		shader.setMat4(phoenix::G_VP, CUBEMAP_PROJ * CUBEMAP_VIEWS[i]);
-		utils->renderCube();
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void allocSHTextures()
-{
-	L00 = generateCubemapTexture(RESOLUTION, true, true);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	L1_1 = generateCubemapTexture(RESOLUTION, true, true);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	L10 = generateCubemapTexture(RESOLUTION, true, true);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	L11 = generateCubemapTexture(RESOLUTION, true, true);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	L2_2 = generateCubemapTexture(RESOLUTION, true, true);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	L2_1 = generateCubemapTexture(RESOLUTION, true, true);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	L20 = generateCubemapTexture(RESOLUTION, true, true);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	L21 = generateCubemapTexture(RESOLUTION, true, true);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	L22 = generateCubemapTexture(RESOLUTION, true, true);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-}
-
-void genMipmaps()
-{
-	glBindTexture(GL_TEXTURE_CUBE_MAP, L00);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, L1_1);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, L10);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, L11);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, L2_2);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, L2_1);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, L20);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, L21);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, L22);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-}
-
-// (Spherical Harmonics) Generate the 9 lighting coefficients for our environment
-void genSHCoefficients(const phoenix::Shader& firstPassShader, const phoenix::Shader& secondPassShader, unsigned int texture)
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	allocSHTextures();
-	// Calculate SH coefficients via Monte Carlo integration on the input/environment map
-	setInputTexture(firstPassShader, texture, true);
-	renderToCubemaps(firstPassShader);
-	// Do another pass for the remaining coefficient since we can only write to 8 framebuffer attachments in a single pass
-	setInputTexture(secondPassShader, texture, true);
-	renderToCubemap(secondPassShader, L22, RESOLUTION, 0);
-	genMipmaps();
 }
 
 unsigned int integrateBRDF(const phoenix::Shader& shader)

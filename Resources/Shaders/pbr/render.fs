@@ -27,22 +27,12 @@ uniform samplerCube gIrradianceMap;
 uniform samplerCube gPrefilteredEnvMap;
 uniform sampler2D gBRDFIntegrationMap;
 
-// RGB values of lighting coefficients for our environment
-uniform samplerCube gL00;
-uniform samplerCube gL1_1;
-uniform samplerCube gL10;
-uniform samplerCube gL11;
-uniform samplerCube gL2_2;
-uniform samplerCube gL2_1;
-uniform samplerCube gL20;
-uniform samplerCube gL21;
-uniform samplerCube gL22;
-
 uniform vec3 gViewPos;
 uniform int gIrradianceMapLightingMode;
 
 uniform vec3 gLightPositions[NUM_LIGHTS];
 uniform vec3 gLightColors[NUM_LIGHTS];
+uniform vec3 gSH9Color[9];
 
 vec3 calcWorldSpaceNormal(vec3 tangentSpaceNormal)
 {
@@ -120,62 +110,16 @@ vec3 approximateSpecularIBL(vec3 specularColor, float roughness, float NoV, vec3
 
 vec3 calcSHIrradiance(vec3 N)
 {
-    vec3 irradiance = vec3(0.0f);
-    irradiance += (textureLod(gL00, vec3(1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL00, vec3(-1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL00, vec3(0.0f, 1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL00, vec3(0.0f, -1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL00, vec3(0.0f, 0.0f, 1.0f), 9.0f).rgb +
-                   textureLod(gL00, vec3(0.0f, 0.0f, -1.0f), 9.0f).rgb) / 6.0f * 0.282095f * A0;
-    irradiance += (textureLod(gL1_1, vec3(1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL1_1, vec3(-1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL1_1, vec3(0.0f, 1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL1_1, vec3(0.0f, -1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL1_1, vec3(0.0f, 0.0f, 1.0f), 9.0f).rgb +
-                   textureLod(gL1_1, vec3(0.0f, 0.0f, -1.0f), 9.0f).rgb) / 6.0f * 0.488603f * N.y * A1;
-    irradiance += (textureLod(gL10, vec3(1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL10, vec3(-1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL10, vec3(0.0f, 1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL10, vec3(0.0f, -1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL10, vec3(0.0f, 0.0f, 1.0f), 9.0f).rgb +
-                   textureLod(gL10, vec3(0.0f, 0.0f, -1.0f), 9.0f).rgb) / 6.0f * 0.488603f * N.z * A1;
-    irradiance += (textureLod(gL11, vec3(1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL11, vec3(-1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL11, vec3(0.0f, 1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL11, vec3(0.0f, -1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL11, vec3(0.0f, 0.0f, 1.0f), 9.0f).rgb +
-                   textureLod(gL11, vec3(0.0f, 0.0f, -1.0f), 9.0f).rgb) / 6.0f * 0.488603f * N.x * A1;
-    irradiance += (textureLod(gL2_2, vec3(1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL2_2, vec3(-1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL2_2, vec3(0.0f, 1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL2_2, vec3(0.0f, -1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL2_2, vec3(0.0f, 0.0f, 1.0f), 9.0f).rgb +
-                   textureLod(gL2_2, vec3(0.0f, 0.0f, -1.0f), 9.0f).rgb) / 6.0f * 1.092548f * N.x * N.y * A2;
-    irradiance += (textureLod(gL2_1, vec3(1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL2_1, vec3(-1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL2_1, vec3(0.0f, 1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL2_1, vec3(0.0f, -1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL2_1, vec3(0.0f, 0.0f, 1.0f), 9.0f).rgb +
-                   textureLod(gL2_1, vec3(0.0f, 0.0f, -1.0f), 9.0f).rgb) / 6.0f * 1.092548f * N.y * N.z * A2;
-    irradiance += (textureLod(gL20, vec3(1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL20, vec3(-1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL20, vec3(0.0f, 1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL20, vec3(0.0f, -1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL20, vec3(0.0f, 0.0f, 1.0f), 9.0f).rgb +
-                   textureLod(gL20, vec3(0.0f, 0.0f, -1.0f), 9.0f).rgb) / 6.0f * 0.315392f * (3.0f * N.z * N.z - 1.0f) * A2;
-    irradiance += (textureLod(gL21, vec3(1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL21, vec3(-1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL21, vec3(0.0f, 1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL21, vec3(0.0f, -1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL21, vec3(0.0f, 0.0f, 1.0f), 9.0f).rgb +
-                   textureLod(gL21, vec3(0.0f, 0.0f, -1.0f), 9.0f).rgb) / 6.0f * 1.092548f * N.x * N.z * A2;
-    irradiance += (textureLod(gL22, vec3(1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL22, vec3(-1.0f, 0.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL22, vec3(0.0f, 1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL22, vec3(0.0f, -1.0f, 0.0f), 9.0f).rgb +
-                   textureLod(gL22, vec3(0.0f, 0.0f, 1.0f), 9.0f).rgb +
-                   textureLod(gL22, vec3(0.0f, 0.0f, -1.0f), 9.0f).rgb) / 6.0f * 0.546274f * (N.x * N.x - N.y * N.y) * A2;
-    return PI * irradiance;
+    vec3 irradiance = gSH9Color[0] * 0.282095f * A0
+        + gSH9Color[1] * 0.488603f * N.y * A1
+        + gSH9Color[2] * 0.488603f * N.z * A1
+        + gSH9Color[3] * 0.488603f * N.x * A1
+        + gSH9Color[4] * 1.092548f * N.x * N.y * A2
+        + gSH9Color[5] * 1.092548f * N.y * N.z * A2
+        + gSH9Color[6] * 0.315392f * (3.0f * N.z * N.z - 1.0f) * A2
+        + gSH9Color[7] * 1.092548f * N.x * N.z * A2
+        + gSH9Color[8] * 0.546274f * (N.x * N.x - N.y * N.y) * A2;
+    return irradiance;
 }
 
 vec3 IBL(vec3 N, vec3 V, vec3 R, vec3 F0, vec3 albedo, float metallic, float roughness, float ao)
@@ -190,7 +134,7 @@ vec3 IBL(vec3 N, vec3 V, vec3 R, vec3 F0, vec3 albedo, float metallic, float rou
     vec3 diffuseColor;
     if (gIrradianceMapLightingMode == 0)
     {
-        diffuseColor = calcSHIrradiance(N) * albedo;
+        diffuseColor = calcSHIrradiance(N) * albedo / PI;
     }
     else
     {

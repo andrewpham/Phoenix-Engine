@@ -20,6 +20,7 @@ namespace phoenix
 	static const std::string G_BUMP_MAP = "gBumpMap";
 	static const std::string G_OPACITY_MAP = "gOpacityMap";
 	static const std::string G_NORMAL_MAP = "gNormalMap";
+	static const std::string G_METALLIC_MAP = "gMetallicMap";
 	static const std::string G_POSITION_MAP = "gPositionMap";
 	static const std::string G_ALBEDO_SPECULAR_MAP = "gAlbedoSpecularMap";
 	static const std::string G_AMBIENT_FACTOR = "gAmbientFactor";

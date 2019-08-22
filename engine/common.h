@@ -11,7 +11,7 @@ namespace phoenix
 	static const float CAMERA_PITCH = -8.4003f; // Initial pitch of our camera
 	static const float BORDER_COLOR[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	static const unsigned int SCREEN_WIDTH = 2560, SCREEN_HEIGHT = 1440;
+	static const unsigned int SCREEN_WIDTH = 2560, SCREEN_HEIGHT = 1440, NUM_CUBEMAP_FACES = 6;
 
 	static const glm::vec3 UP(0.0f, 1.0f, 0.0f);
 	static const glm::vec3 CAMERA_POS(-9.2906f, 2.03786f, 10.2668f); // Starting position of our camera

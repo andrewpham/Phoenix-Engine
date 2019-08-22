@@ -97,7 +97,7 @@ int main()
 	renderPassShader.setInt(phoenix::G_NORMAL_MAP, 1);
 	renderPassShader.setInt(phoenix::G_ALBEDO_SPECULAR_MAP, 2);
 	renderPassShader.setInt("gPreviousFrameMap", 3);
-	renderPassShader.setInt("gMetallicMap", 4);
+	renderPassShader.setInt(phoenix::G_METALLIC_MAP, 4);
 
 	phoenix::Model sponza("../Resources/Objects/sponza/sponza.obj");
 
