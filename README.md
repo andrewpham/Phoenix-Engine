@@ -42,4 +42,5 @@ Johan Andersson on [DirectX 11 Rendering in Battlefield 3](http://www.dice.se/wp
 [NVIDIA Turing GPU Architecture Whitepaper](https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf)  
 Robin Green's [Spherical Harmonic Lighting: The Gritty Details](http://silviojemma.com/public/papers/lighting/spherical-harmonic-lighting.pdf) Document  
 Ravi Ramamoorthi's [An Efficient Representation for Irradiance Environment Maps](http://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf) Paper  
-[Stupid Spherical Harmonics (SH) Tricks](https://www.ppsloan.org/publications/StupidSH36.pdf)
+[Stupid Spherical Harmonics (SH) Tricks](https://www.ppsloan.org/publications/StupidSH36.pdf)  
+Carsten Dachsbacher's [Reflective Shadow Maps](http://www.klayge.org/material/3_12/GI/rsm.pdf) Paper
