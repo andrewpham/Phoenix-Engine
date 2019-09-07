@@ -23,12 +23,16 @@ namespace phoenix
 	static const std::string G_METALLIC_MAP = "gMetallicMap";
 	static const std::string G_POSITION_MAP = "gPositionMap";
 	static const std::string G_ALBEDO_SPECULAR_MAP = "gAlbedoSpecularMap";
+	static const std::string G_FLUX_MAP = "gFluxMap";
 	static const std::string G_AMBIENT_FACTOR = "gAmbientFactor";
 	static const std::string G_SPECULAR_FACTOR = "gSpecularFactor";
 	static const std::string G_METALNESS = "gMetalness";
 	static const std::string G_TEXTURE_3D = "gTexture3D";
 	static const std::string G_RENDER_MODE = "gRenderMode";
 	static const std::string G_OUTPUT = "gOutput";
+	static const std::string G_ANGLES_TEXTURE = "gAnglesTexture";
+	static const std::string G_CALIBRATED_LIGHT_SIZE = "gCalibratedLightSize";
+	static const std::string G_RENDER_TARGET = "gRenderTarget";
 
 	// Error messages
 	static const std::string GLFW_CREATE_WINDOW_ERROR = "Failed to create GLFW window!\n";

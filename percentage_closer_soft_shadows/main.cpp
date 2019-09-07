@@ -72,18 +72,18 @@ int main()
 	renderPassShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
 	renderPassShader.setInt(phoenix::G_POSITION_MAP, 1);
 	renderPassShader.setInt(phoenix::G_NORMAL_MAP, 2);
-	renderPassShader.setInt("gFluxMap", 3);
+	renderPassShader.setInt(phoenix::G_FLUX_MAP, 3);
 	renderPassShader.setInt(phoenix::G_SHADOW_MAP, 4);
-	renderPassShader.setInt("gAnglesTexture", 5);
+	renderPassShader.setInt(phoenix::G_ANGLES_TEXTURE, 5);
 	renderPassShader.setFloat(phoenix::G_AMBIENT_FACTOR, phoenix::AMBIENT_FACTOR);
 	renderPassShader.setFloat(phoenix::G_SPECULAR_FACTOR, phoenix::SPECULAR_FACTOR);
-	renderPassShader.setFloat("gCalibratedLightSize", phoenix::CALIBRATED_LIGHT_SIZE);
+	renderPassShader.setFloat(phoenix::G_CALIBRATED_LIGHT_SIZE, phoenix::CALIBRATED_LIGHT_SIZE);
 	renderPassShader.setVec3(phoenix::G_LIGHT_COLOR, phoenix::LIGHT_COLOR);
 	phoenix::Shader shadowMapPassShader("../Resources/Shaders/shadow_mapping/shadow_map_pass.vs", "../Resources/Shaders/shadow_mapping/shadow_map_pass.fs");
 	shadowMapPassShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
 	phoenix::Shader renderQuadShader("../Resources/Shaders/shadow_mapping/render_quad.vs", "../Resources/Shaders/shadow_mapping/render_quad.fs");
 	renderQuadShader.use();
-	renderQuadShader.setInt("gRenderTarget", 0);
+	renderQuadShader.setInt(phoenix::G_RENDER_TARGET, 0);
 	phoenix::Shader debugLinesShader("../Resources/Shaders/shadow_mapping/debug_lines.vs", "../Resources/Shaders/shadow_mapping/debug_lines.fs");
 
 	phoenix::Model dragon("../Resources/Objects/dragon/dragon.obj");

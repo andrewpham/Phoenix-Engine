@@ -38,7 +38,7 @@ namespace phoenix
 		void processInput(GLFWwindow*, Camera*, bool);
 		// Assumes that the color texture is always bound to unit 0
 		void changeColorTexture(unsigned int);
-		void renderObject(const Utils*, const Shader&, Model&, glm::vec3, float);
+		void renderObject(const Utils*, const Shader&, Model&, glm::vec3, float, glm::vec3 = OBJ_SCALE);
 		void renderScene(Utils*, const Shader&, Model&);
 		void setUniforms(const Shader&, const Camera*);
 		void renderDebugLines(const Shader&, Utils*);

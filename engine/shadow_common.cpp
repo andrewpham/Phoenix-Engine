@@ -96,12 +96,12 @@ namespace phoenix
 		glBindTexture(GL_TEXTURE_2D, texture);
 	}
 
-	void ShadowCommon::renderObject(const Utils* utils, const Shader& shader, Model& object, glm::vec3 translation, float rotation)
+	void ShadowCommon::renderObject(const Utils* utils, const Shader& shader, Model& object, glm::vec3 translation, float rotation, glm::vec3 scale)
 	{
 		shader.use();
 		glm::mat4 world = glm::mat4(1.0f);
 		world = glm::translate(world, translation);
-		world = glm::scale(world, OBJ_SCALE);
+		world = glm::scale(world, scale);
 		world = glm::rotate(world, glm::radians(rotation), UP);
 		shader.setMat4(G_WVP, utils->_projection * utils->_view * world);
 		shader.setMat4(G_WORLD_MATRIX, world);
