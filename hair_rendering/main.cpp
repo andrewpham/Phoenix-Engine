@@ -14,11 +14,15 @@ void cursorPosCallback(GLFWwindow*, double, double);
 void scrollCallback(GLFWwindow*, double, double);
 
 void generateRandom3DTexture();
-void renderScene(const phoenix::Shader&, phoenix::Model&);
+void setInputs(const phoenix::Shader&, bool);
 void execShadowMapPass(const phoenix::Shader&, phoenix::Model&);
-void execRenderPass(const phoenix::Shader&, phoenix::Model&);
+void execRenderPass(const phoenix::Shader&, const phoenix::Shader&, phoenix::Model&);
 void initPointers();
 void deletePointers();
+
+// Parameters for our hair model
+const glm::vec3 TRANSLATION = glm::vec3(0.0f, -4.5f, 0.0f), SCALE = glm::vec3(0.1f);
+const float ROTATION = -90.0f;
 
 phoenix::Camera* camera;
 phoenix::Utils* utils;
@@ -67,16 +71,25 @@ int main()
 	// Generate volume textures and fill them with the cosines and sines of random rotation angles for PCSS
 	generateRandom3DTexture();
 
-	phoenix::Shader renderPassShader("../Resources/Shaders/hair/render_pass.vs", "../Resources/Shaders/hair/render_pass.fs");
-	renderPassShader.use();
-	renderPassShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
-	renderPassShader.setInt(phoenix::G_NORMAL_MAP, 1);
-	renderPassShader.setInt(phoenix::G_SHADOW_MAP, 2);
-	renderPassShader.setInt(phoenix::G_ANGLES_TEXTURE, 3);
-	renderPassShader.setFloat(phoenix::G_AMBIENT_FACTOR, phoenix::AMBIENT_FACTOR);
-	renderPassShader.setFloat(phoenix::G_SPECULAR_FACTOR, phoenix::SPECULAR_FACTOR);
-	renderPassShader.setFloat(phoenix::G_CALIBRATED_LIGHT_SIZE, phoenix::CALIBRATED_LIGHT_SIZE);
-	renderPassShader.setVec3(phoenix::G_LIGHT_COLOR, phoenix::LIGHT_COLOR);
+	phoenix::Shader floorShader("../Resources/Shaders/hair/floor.vs", "../Resources/Shaders/hair/floor.fs");
+	floorShader.use();
+	floorShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
+	floorShader.setInt(phoenix::G_SHADOW_MAP, 1);
+	floorShader.setInt(phoenix::G_ANGLES_TEXTURE, 2);
+	floorShader.setFloat(phoenix::G_AMBIENT_FACTOR, phoenix::AMBIENT_FACTOR);
+	floorShader.setFloat(phoenix::G_SPECULAR_FACTOR, phoenix::SPECULAR_FACTOR);
+	floorShader.setFloat(phoenix::G_CALIBRATED_LIGHT_SIZE, phoenix::CALIBRATED_LIGHT_SIZE);
+	floorShader.setVec3(phoenix::G_LIGHT_COLOR, phoenix::LIGHT_COLOR);
+	phoenix::Shader hairShader("../Resources/Shaders/hair/hair.vs", "../Resources/Shaders/hair/hair.fs");
+	hairShader.use();
+	hairShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
+	hairShader.setInt(phoenix::G_SHADOW_MAP, 1);
+	hairShader.setInt(phoenix::G_ANGLES_TEXTURE, 2);
+	hairShader.setInt(phoenix::G_NORMAL_MAP, 3);
+	hairShader.setFloat(phoenix::G_AMBIENT_FACTOR, phoenix::AMBIENT_FACTOR);
+	hairShader.setFloat(phoenix::G_SPECULAR_FACTOR, phoenix::SPECULAR_FACTOR);
+	hairShader.setFloat(phoenix::G_CALIBRATED_LIGHT_SIZE, phoenix::CALIBRATED_LIGHT_SIZE);
+	hairShader.setVec3(phoenix::G_LIGHT_COLOR, phoenix::LIGHT_COLOR);
 	phoenix::Shader shadowMapPassShader("../Resources/Shaders/hair/shadow_map_pass.vs", "../Resources/Shaders/hair/shadow_map_pass.fs");
 	phoenix::Shader renderQuadShader("../Resources/Shaders/hair/render_quad.vs", "../Resources/Shaders/hair/render_quad.fs");
 	renderQuadShader.use();
@@ -115,7 +128,7 @@ int main()
 		}
 		else
 		{
-			execRenderPass(renderPassShader, hair);
+			execRenderPass(floorShader, hairShader, hair);
 			shadowCommon->renderDebugLines(debugLinesShader, utils);
 		}
 
@@ -184,12 +197,18 @@ void generateRandom3DTexture()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
-void renderScene(const phoenix::Shader& shader, phoenix::Model& object)
+void setInputs(const phoenix::Shader& shader, bool useObjTexture)
 {
-	utils->renderPlane(shader);
-	shadowCommon->changeColorTexture(shadowCommon->_objectTexture);
-	shader.setInt(phoenix::G_USE_NORMAL_MAP, 1);
-	shadowCommon->renderObject(utils, shader, object, glm::vec3(0.0f, -4.5f, 0.0f), -90.0f, glm::vec3(0.1f));
+	shadowCommon->setUniforms(shader, camera);
+	shadowCommon->setLightSpaceVP(shader, shadowCommon->_lightPos, phoenix::TARGET);
+
+	shadowCommon->changeColorTexture(useObjTexture ? shadowCommon->_objectTexture : shadowCommon->_floorTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, renderTargets->_textureID);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_3D, anglesTexture);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, normalMap);
 }
 
 void execShadowMapPass(const phoenix::Shader& shader, phoenix::Model& object)
@@ -200,25 +219,17 @@ void execShadowMapPass(const phoenix::Shader& shader, phoenix::Model& object)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	renderScene(shader, object);
+	utils->renderPlane(shader);
+	shadowCommon->renderObject(utils, shader, object, TRANSLATION, ROTATION, SCALE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void execRenderPass(const phoenix::Shader& shader, phoenix::Model& object)
+void execRenderPass(const phoenix::Shader& floorShader, const phoenix::Shader& hairShader, phoenix::Model& object)
 {
-	shadowCommon->setUniforms(shader, camera);
-	shadowCommon->setLightSpaceVP(shader, shadowCommon->_lightPos, phoenix::TARGET);
-
-	shadowCommon->changeColorTexture(shadowCommon->_floorTexture);
-	shader.setInt(phoenix::G_USE_NORMAL_MAP, 0);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normalMap);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, renderTargets->_textureID);
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_3D, anglesTexture);
-
-	renderScene(shader, object);
+	setInputs(floorShader, false);
+	utils->renderPlane(floorShader);
+	setInputs(hairShader, true);
+	shadowCommon->renderObject(utils, hairShader, object, TRANSLATION, ROTATION, SCALE);
 }
 
 void initPointers()

@@ -79,9 +79,9 @@ in VS_OUT {
 } fs_in;
 
 uniform sampler2D gDiffuseTexture;
-uniform sampler2D gNormalMap;
 uniform sampler2D gShadowMap;
 uniform sampler3D gAnglesTexture;
+uniform sampler2D gNormalMap;
 
 uniform vec3 gLightPos;
 uniform vec3 gViewPos;
@@ -89,14 +89,13 @@ uniform vec3 gLightColor;
 uniform float gAmbientFactor;
 uniform float gSpecularFactor;
 uniform float gCalibratedLightSize;
-uniform int gUseNormalMap;
 
 const vec2 RANDOM_VALUES = vec2(texture(gAnglesTexture, fs_in.WorldPos * CORRECTION_FACTOR).r,
                                 texture(gAnglesTexture, fs_in.WorldPos * CORRECTION_FACTOR).g);
 const vec2 ROTATION = RANDOM_VALUES * 2 - 1;
 const vec2 TEXEL_SIZE = 1.0f / textureSize(gShadowMap, 0);
 const vec3 LIGHT_SPACE_POS_POST_W = fs_in.LightSpacePos.xyz / fs_in.LightSpacePos.w * 0.5f + 0.5f;
-
+const vec3 tangentSpaceNormal = texture(gNormalMap, fs_in.TexCoords).xyz * 2.0f - 1.0f;
 vec3 calcWorldSpaceNormal(vec3 tangentSpaceNormal)
 {
     vec3 N = normalize(fs_in.WorldNormal);
@@ -105,6 +104,9 @@ vec3 calcWorldSpaceNormal(vec3 tangentSpaceNormal)
     mat3 TBN = mat3(T, B, N);
     return normalize(TBN * tangentSpaceNormal);
 }
+const vec3 N = calcWorldSpaceNormal(tangentSpaceNormal);
+const vec3 L = normalize(gLightPos - fs_in.WorldPos);
+const float NoL = dot(N, L);
 
 float calcSearchWidth(float receiverDepth)
 {
@@ -155,7 +157,7 @@ float calcPCFKernelSize(float bias)
     return penumbraWidth * gCalibratedLightSize * NEAR / receiverDepth;
 }
 
-float calcShadow(float NoL)
+float calcShadow()
 {
     if (LIGHT_SPACE_POS_POST_W.z > 1.0f)
     {
@@ -186,19 +188,6 @@ float calcShadow(float NoL)
 
 void main()
 {
-    vec3 N;
-    if (gUseNormalMap == 1)
-    {
-        vec3 tangentSpaceNormal = texture(gNormalMap, fs_in.TexCoords).xyz * 2.0f - 1.0f;
-        N = calcWorldSpaceNormal(tangentSpaceNormal);
-    }
-    else
-    {
-        N = normalize(fs_in.WorldNormal);
-    }
-    vec3 L = normalize(gLightPos - fs_in.WorldPos);
-    float NoL = dot(N, L);
-
     // Blinn-Phong shading
     vec3 color = texture(gDiffuseTexture, fs_in.TexCoords).rgb;
 
@@ -210,7 +199,7 @@ void main()
     vec3 H = normalize(L + V);
     vec3 specular = pow(clamp(dot(N, H), 0.0f, 1.0f), gSpecularFactor) * gLightColor;
 
-    float shadow = calcShadow(NoL);
+    float shadow = calcShadow();
     vec3 fragColor = (ambient + (1.0f - shadow) * (diffuse + specular)) * color;
 
     FragColor = vec4(fragColor, 1.0f);
