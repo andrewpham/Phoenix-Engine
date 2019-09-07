@@ -30,7 +30,7 @@ float lastY = static_cast<float>(phoenix::SCREEN_HEIGHT) / 2.0f;
 
 bool calibratedCursor = false;
 
-unsigned int anglesTexture;
+unsigned int anglesTexture, normalMap;
 
 int main()
 {
@@ -63,14 +63,16 @@ int main()
 
 	shadowCommon->_floorTexture = phoenix::Utils::loadTexture("../Resources/Textures/shadow_mapping/wood.png");
 	shadowCommon->_objectTexture = phoenix::Utils::loadTexture("../Resources/Objects/hair/hair_diff_black.jpg");
+	normalMap = phoenix::Utils::loadTexture("../Resources/Objects/hair/hair_normal.png");
 	// Generate volume textures and fill them with the cosines and sines of random rotation angles for PCSS
 	generateRandom3DTexture();
 
 	phoenix::Shader renderPassShader("../Resources/Shaders/hair/render_pass.vs", "../Resources/Shaders/hair/render_pass.fs");
 	renderPassShader.use();
 	renderPassShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
-	renderPassShader.setInt(phoenix::G_SHADOW_MAP, 1);
-	renderPassShader.setInt(phoenix::G_ANGLES_TEXTURE, 2);
+	renderPassShader.setInt(phoenix::G_NORMAL_MAP, 1);
+	renderPassShader.setInt(phoenix::G_SHADOW_MAP, 2);
+	renderPassShader.setInt(phoenix::G_ANGLES_TEXTURE, 3);
 	renderPassShader.setFloat(phoenix::G_AMBIENT_FACTOR, phoenix::AMBIENT_FACTOR);
 	renderPassShader.setFloat(phoenix::G_SPECULAR_FACTOR, phoenix::SPECULAR_FACTOR);
 	renderPassShader.setFloat(phoenix::G_CALIBRATED_LIGHT_SIZE, phoenix::CALIBRATED_LIGHT_SIZE);
@@ -186,6 +188,7 @@ void renderScene(const phoenix::Shader& shader, phoenix::Model& object)
 {
 	utils->renderPlane(shader);
 	shadowCommon->changeColorTexture(shadowCommon->_objectTexture);
+	shader.setInt(phoenix::G_USE_NORMAL_MAP, 1);
 	shadowCommon->renderObject(utils, shader, object, glm::vec3(0.0f, -4.5f, 0.0f), -90.0f, glm::vec3(0.1f));
 }
 
@@ -207,9 +210,12 @@ void execRenderPass(const phoenix::Shader& shader, phoenix::Model& object)
 	shadowCommon->setLightSpaceVP(shader, shadowCommon->_lightPos, phoenix::TARGET);
 
 	shadowCommon->changeColorTexture(shadowCommon->_floorTexture);
+	shader.setInt(phoenix::G_USE_NORMAL_MAP, 0);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, renderTargets->_textureID);
+	glBindTexture(GL_TEXTURE_2D, normalMap);
 	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, renderTargets->_textureID);
+	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_3D, anglesTexture);
 
 	renderScene(shader, object);
