@@ -34,7 +34,7 @@ float lastY = static_cast<float>(phoenix::SCREEN_HEIGHT) / 2.0f;
 
 bool calibratedCursor = false;
 
-unsigned int anglesTexture, normalMap;
+unsigned int anglesTexture, normalMap, ambientOcclusionMap, specularMap, alphaTexture, shiftTexture, noiseTexture;
 
 int main()
 {
@@ -68,6 +68,11 @@ int main()
 	shadowCommon->_floorTexture = phoenix::Utils::loadTexture("../Resources/Textures/shadow_mapping/wood.png");
 	shadowCommon->_objectTexture = phoenix::Utils::loadTexture("../Resources/Objects/hair/hair_diff_black.jpg");
 	normalMap = phoenix::Utils::loadTexture("../Resources/Objects/hair/hair_normal.png");
+	ambientOcclusionMap = phoenix::Utils::loadTexture("../Resources/Objects/hair/hair_ao.png");
+	specularMap = phoenix::Utils::loadTexture("../Resources/Objects/hair/hair_spec.jpg");
+	alphaTexture = phoenix::Utils::loadTexture("../Resources/Objects/hair/hair_op.psd");
+	shiftTexture = phoenix::Utils::loadTexture("../Resources/Objects/hair/hair_shift.png");
+	noiseTexture = phoenix::Utils::loadTexture("../Resources/Objects/hair/GlitterTexture.png");
 	// Generate volume textures and fill them with the cosines and sines of random rotation angles for PCSS
 	generateRandom3DTexture();
 
@@ -82,13 +87,14 @@ int main()
 	floorShader.setVec3(phoenix::G_LIGHT_COLOR, phoenix::LIGHT_COLOR);
 	phoenix::Shader hairShader("../Resources/Shaders/hair/hair.vs", "../Resources/Shaders/hair/hair.fs");
 	hairShader.use();
-	hairShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
-	hairShader.setInt(phoenix::G_SHADOW_MAP, 1);
-	hairShader.setInt(phoenix::G_ANGLES_TEXTURE, 2);
+	hairShader.setInt("gBaseTexture", 0);
 	hairShader.setInt(phoenix::G_NORMAL_MAP, 3);
+	hairShader.setInt(phoenix::G_AO_MAP, 4);
+	hairShader.setInt(phoenix::G_SPECULAR_MAP, 5);
+	hairShader.setInt("gAlphaTexture", 6);
+	hairShader.setInt("gShiftTexture", 7);
+	hairShader.setInt("gNoiseTexture", 8);
 	hairShader.setFloat(phoenix::G_AMBIENT_FACTOR, phoenix::AMBIENT_FACTOR);
-	hairShader.setFloat(phoenix::G_SPECULAR_FACTOR, phoenix::SPECULAR_FACTOR);
-	hairShader.setFloat(phoenix::G_CALIBRATED_LIGHT_SIZE, phoenix::CALIBRATED_LIGHT_SIZE);
 	hairShader.setVec3(phoenix::G_LIGHT_COLOR, phoenix::LIGHT_COLOR);
 	phoenix::Shader shadowMapPassShader("../Resources/Shaders/hair/shadow_map_pass.vs", "../Resources/Shaders/hair/shadow_map_pass.fs");
 	phoenix::Shader renderQuadShader("../Resources/Shaders/hair/render_quad.vs", "../Resources/Shaders/hair/render_quad.fs");
@@ -209,6 +215,16 @@ void setInputs(const phoenix::Shader& shader, bool useObjTexture)
 	glBindTexture(GL_TEXTURE_3D, anglesTexture);
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, normalMap);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, ambientOcclusionMap);
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D, specularMap);
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, alphaTexture);
+	glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_2D, shiftTexture);
+	glActiveTexture(GL_TEXTURE8);
+	glBindTexture(GL_TEXTURE_2D, noiseTexture);
 }
 
 void execShadowMapPass(const phoenix::Shader& shader, phoenix::Model& object)

@@ -113,7 +113,7 @@ int main()
 	renderShader.setInt(phoenix::G_NORMAL_MAP, 4);
 	renderShader.setInt(phoenix::G_METALLIC_MAP, 5);
 	renderShader.setInt("gRoughnessMap", 6);
-	renderShader.setInt("gAOMap", 7);
+	renderShader.setInt(phoenix::G_AO_MAP, 7);
 	for (size_t i = 0; i < LIGHT_POSITIONS.size(); ++i)
 	{
 		renderShader.setVec3("gLightPositions[" + std::to_string(i) + "]", LIGHT_POSITIONS[i]);

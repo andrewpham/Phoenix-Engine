@@ -33,6 +33,7 @@ namespace phoenix
 	static const std::string G_ANGLES_TEXTURE = "gAnglesTexture";
 	static const std::string G_CALIBRATED_LIGHT_SIZE = "gCalibratedLightSize";
 	static const std::string G_RENDER_TARGET = "gRenderTarget";
+	static const std::string G_AO_MAP = "gAOMap";
 
 	// Error messages
 	static const std::string GLFW_CREATE_WINDOW_ERROR = "Failed to create GLFW window!\n";
