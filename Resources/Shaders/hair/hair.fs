@@ -26,6 +26,7 @@ uniform vec3 gLightPos;
 uniform vec3 gViewPos;
 uniform vec3 gLightColor;
 uniform float gAmbientFactor;
+uniform float gSpecularFactor;
 uniform int gRenderMode;
 
 const vec3 T = normalize(dFdx(fs_in.WorldPos) * dFdy(fs_in.TexCoords).t - dFdy(fs_in.WorldPos) * dFdx(fs_in.TexCoords).t);
@@ -103,7 +104,27 @@ vec4 calcHairColor()
     return hairColor;
 }
 
+vec4 calcBlinnPhongColor()
+{
+    vec3 color = texture(gBaseTexture, fs_in.TexCoords).rgb;
+
+    vec3 ambient = gAmbientFactor * color;
+
+    vec3 diffuse = clamp(dot(N, L), 0.0f, 1.0f) * gLightColor;
+
+    vec3 V = normalize(gViewPos - fs_in.WorldPos);
+    vec3 H = normalize(L + V);
+    vec3 specular = texture(gSpecularMap, fs_in.TexCoords).rgb * pow(clamp(dot(N, H), 0.0f, 1.0f), gSpecularFactor) * gLightColor;
+
+    return vec4((ambient + diffuse + specular) * color, 1.0f);
+}
+
 void main()
 {
+    if (gRenderMode == 7)
+    {
+        FragColor = calcBlinnPhongColor();
+        return;
+    }
     FragColor = calcHairColor();
 }

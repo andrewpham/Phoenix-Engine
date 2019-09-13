@@ -24,6 +24,7 @@ Glad, GLFW, OpenGL Mathematics (GLM), and Assimp.
 ![](images/csm.png "Cascaded Shadow Mapping")
 ![](images/ssr.png "Screen Space Reflections")
 ![](images/tds.png "Tiled Deferred Shading")
+![](images/hair.png "Hair Rendering")
 
 ### Resources
 Brian Karis' [Real Shading in Unreal Engine 4](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf)  
@@ -43,4 +44,7 @@ Johan Andersson on [DirectX 11 Rendering in Battlefield 3](http://www.dice.se/wp
 Robin Green's [Spherical Harmonic Lighting: The Gritty Details](http://silviojemma.com/public/papers/lighting/spherical-harmonic-lighting.pdf) Document  
 Ravi Ramamoorthi's [An Efficient Representation for Irradiance Environment Maps](http://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf) Paper  
 [Stupid Spherical Harmonics (SH) Tricks](https://www.ppsloan.org/publications/StupidSH36.pdf)  
-Carsten Dachsbacher's [Reflective Shadow Maps](http://www.klayge.org/material/3_12/GI/rsm.pdf) Paper
+Carsten Dachsbacher's [Reflective Shadow Maps](http://www.klayge.org/material/3_12/GI/rsm.pdf) Paper  
+Thorsten Scheuermann’s SIGGRAPH Talk on [Practical Real-Time Hair Rendering and Shading](https://pdfs.semanticscholar.org/aa4c/9b498a48ec9eff1d93eaca646b3c9d2490b1.pdf)  
+Thorsten Scheuermann’s GDC Talk on [Hair Rendering and Shading](http://web.engr.oregonstate.edu/~mjb/cs519/Projects/Papers/HairRendering.pdf)  
+[Practical Real-Time Hair Rendering and Shading](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.607.1272&rep=rep1&type=pdf) Paper

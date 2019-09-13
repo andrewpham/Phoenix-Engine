@@ -88,6 +88,10 @@ namespace phoenix
 		{
 			_renderMode = 6;
 		}
+		if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS)
+		{
+			_renderMode = 7;
+		}
 	}
 
 	void ShadowCommon::changeColorTexture(unsigned int texture)
