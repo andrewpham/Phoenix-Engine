@@ -94,7 +94,7 @@ int main()
 	hairShader.setInt("gAlphaTexture", 6);
 	hairShader.setInt("gShiftTexture", 7);
 	hairShader.setInt("gNoiseTexture", 8);
-	hairShader.setFloat(phoenix::G_AMBIENT_FACTOR, phoenix::AMBIENT_FACTOR);
+	hairShader.setFloat(phoenix::G_AMBIENT_FACTOR, 0.8f);
 	hairShader.setFloat(phoenix::G_SPECULAR_FACTOR, phoenix::SPECULAR_FACTOR);
 	hairShader.setVec3(phoenix::G_LIGHT_COLOR, phoenix::LIGHT_COLOR);
 	phoenix::Shader shadowMapPassShader("../Resources/Shaders/hair/shadow_map_pass.vs", "../Resources/Shaders/hair/shadow_map_pass.fs");

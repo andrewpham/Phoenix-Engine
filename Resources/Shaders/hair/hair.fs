@@ -3,10 +3,10 @@ out vec4 FragColor;
 
 const float PRIMARY_SHIFT = -1.0f;
 const float SECONDARY_SHIFT = 1.5f;
-const float PRIMARY_SPECULAR_EXP = 0.98f;
-const float SECONDARY_SPECULAR_EXP = 0.49f;
-const vec3 DIFFUSE_COLOR = vec3(0.416f, 0.424f, 0.431f);
-const vec3 SECONDARY_SPECULAR_COLOR = DIFFUSE_COLOR;
+const float PRIMARY_SPECULAR_EXP = 1.0f;
+const float SECONDARY_SPECULAR_EXP = 0.5f;
+const vec3 DIFFUSE_COLOR = vec3(0.8f);
+const vec3 SECONDARY_SPECULAR_COLOR = vec3(0.35f);
 
 in VS_OUT {
     vec3 WorldPos;
