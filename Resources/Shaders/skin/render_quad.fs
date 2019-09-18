@@ -7,5 +7,5 @@ uniform sampler2D gRenderTarget;
 
 void main()
 {
-    FragColor = vec4(vec3(texture(gRenderTarget, TexCoords).r), 1.0f);
+    FragColor = texture(gRenderTarget, TexCoords);
 }

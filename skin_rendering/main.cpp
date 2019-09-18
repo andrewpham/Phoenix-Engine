@@ -16,6 +16,7 @@ void scrollCallback(GLFWwindow*, double, double);
 void generateRandom3DTexture();
 void setInputs(const phoenix::Shader&, bool);
 void execShadowMapPass(const phoenix::Shader&, phoenix::Model&);
+void execTextureSpacePass(const phoenix::Shader&, phoenix::Model&);
 void execRenderPass(const phoenix::Shader&, const phoenix::Shader&, phoenix::Model&);
 void initPointers();
 void deletePointers();
@@ -26,7 +27,8 @@ const float ROTATION = -90.0f;
 
 phoenix::Camera* camera;
 phoenix::Utils* utils;
-phoenix::Framebuffer* renderTargets;
+phoenix::Framebuffer* shadowMapRenderTarget;
+phoenix::Framebuffer* textureSpaceRenderTargets;
 phoenix::ShadowCommon* shadowCommon;
 
 float lastX = static_cast<float>(phoenix::SCREEN_WIDTH) / 2.0f;
@@ -88,6 +90,9 @@ int main()
 	headShader.setFloat(phoenix::G_SPECULAR_FACTOR, 5.0f);
 	headShader.setVec3(phoenix::G_LIGHT_COLOR, phoenix::LIGHT_COLOR);
 	phoenix::Shader shadowMapPassShader("../Resources/Shaders/skin/shadow_map_pass.vs", "../Resources/Shaders/skin/shadow_map_pass.fs");
+	phoenix::Shader textureSpacePassShader("../Resources/Shaders/skin/texture_space_pass.vs", "../Resources/Shaders/skin/texture_space_pass.fs");
+	textureSpacePassShader.use();
+	textureSpacePassShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
 	phoenix::Shader renderQuadShader("../Resources/Shaders/skin/render_quad.vs", "../Resources/Shaders/skin/render_quad.fs");
 	renderQuadShader.use();
 	renderQuadShader.setInt(phoenix::G_RENDER_TARGET, 0);
@@ -95,8 +100,12 @@ int main()
 
 	phoenix::Model head("../Resources/Objects/head/head.OBJ");
 
-	glBindFramebuffer(GL_FRAMEBUFFER, renderTargets->_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapRenderTarget->_FBO);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	glBindFramebuffer(GL_FRAMEBUFFER, textureSpaceRenderTargets->_FBO);
+	unsigned int irradianceMap = textureSpaceRenderTargets->genAttachment(GL_RGBA32F, GL_RGBA, GL_FLOAT);
+	GLenum bufs[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, bufs);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -114,6 +123,8 @@ int main()
 
 		// Shadow map pass
 		execShadowMapPass(shadowMapPassShader, head);
+		// Stretch map pass
+		execTextureSpacePass(textureSpacePassShader, head);
 
 		glViewport(0, 0, phoenix::SCREEN_WIDTH, phoenix::SCREEN_HEIGHT);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -121,7 +132,15 @@ int main()
 		// Render pass
 		if (shadowCommon->_renderMode == 1)
 		{
-			utils->renderQuad(renderQuadShader, renderTargets->_textureID);
+			utils->renderQuad(renderQuadShader, shadowMapRenderTarget->_textureID);
+		}
+		else if (shadowCommon->_renderMode == 2)
+		{
+			utils->renderQuad(renderQuadShader, textureSpaceRenderTargets->_textureID);
+		}
+		else if (shadowCommon->_renderMode == 3)
+		{
+			utils->renderQuad(renderQuadShader, irradianceMap);
 		}
 		else
 		{
@@ -201,7 +220,7 @@ void setInputs(const phoenix::Shader& shader, bool useObjTexture)
 
 	shadowCommon->changeColorTexture(useObjTexture ? shadowCommon->_objectTexture : shadowCommon->_floorTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, renderTargets->_textureID);
+	glBindTexture(GL_TEXTURE_2D, shadowMapRenderTarget->_textureID);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_3D, anglesTexture);
 	glActiveTexture(GL_TEXTURE3);
@@ -211,12 +230,24 @@ void setInputs(const phoenix::Shader& shader, bool useObjTexture)
 void execShadowMapPass(const phoenix::Shader& shader, phoenix::Model& object)
 {
 	shadowCommon->setLightSpaceVP(shader, shadowCommon->_lightPos, phoenix::TARGET);
-	glViewport(0, 0, phoenix::SHADOW_MAP_WIDTH, phoenix::SHADOW_MAP_HEIGHT);
-	glBindFramebuffer(GL_FRAMEBUFFER, renderTargets->_FBO);
+	glViewport(0, 0, phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapRenderTarget->_FBO);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	utils->renderPlane(shader);
+	shadowCommon->renderObject(utils, shader, object, TRANSLATION, ROTATION, SCALE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void execTextureSpacePass(const phoenix::Shader& shader, phoenix::Model& object)
+{
+	glViewport(0, 0, phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, textureSpaceRenderTargets->_FBO);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	shadowCommon->changeColorTexture(shadowCommon->_objectTexture);
 	shadowCommon->renderObject(utils, shader, object, TRANSLATION, ROTATION, SCALE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -232,7 +263,8 @@ void execRenderPass(const phoenix::Shader& floorShader, const phoenix::Shader& h
 void initPointers()
 {
 	shadowCommon = new phoenix::ShadowCommon();
-	renderTargets = new phoenix::Framebuffer(phoenix::SHADOW_MAP_WIDTH, phoenix::SHADOW_MAP_HEIGHT, true);
+	shadowMapRenderTarget = new phoenix::Framebuffer(phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT, true);
+	textureSpaceRenderTargets = new phoenix::Framebuffer(phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT, false, true);
 	utils = new phoenix::Utils();
 	camera = new phoenix::Camera();
 }
@@ -241,6 +273,7 @@ void deletePointers()
 {
 	delete camera;
 	delete utils;
-	delete renderTargets;
+	delete textureSpaceRenderTargets;
+	delete shadowMapRenderTarget;
 	delete shadowCommon;
 }
