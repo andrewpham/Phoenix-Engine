@@ -6,6 +6,7 @@
 #include <engine/model.h>
 #include <engine/camera.h>
 
+// A suite of helper functions that were once restricted to shadow mapping demos
 namespace phoenix
 {
 	// Uniform names

@@ -106,7 +106,7 @@ int main()
 
 	phoenix::Shader renderShader("../Resources/Shaders/pbr/render.vs", "../Resources/Shaders/pbr/render.fs");
 	renderShader.use();
-	renderShader.setInt("gIrradianceMap", 0);
+	renderShader.setInt(phoenix::G_IRRADIANCE_MAP, 0);
 	renderShader.setInt("gPrefilteredEnvMap", 1);
 	renderShader.setInt("gBRDFIntegrationMap", 2);
 	renderShader.setInt("gAlbedoMap", 3);

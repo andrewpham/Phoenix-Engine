@@ -16,19 +16,23 @@ void scrollCallback(GLFWwindow*, double, double);
 void generateRandom3DTexture();
 void setInputs(const phoenix::Shader&, bool);
 void execShadowMapPass(const phoenix::Shader&, phoenix::Model&);
-void execTextureSpacePass(const phoenix::Shader&, phoenix::Model&);
+void execTextureSpaceInputsPass(const phoenix::Shader&, phoenix::Model&);
+void execBlurPasses(const phoenix::Shader&, const phoenix::Shader&, const phoenix::Shader&, const phoenix::Shader&);
 void execRenderPass(const phoenix::Shader&, const phoenix::Shader&, phoenix::Model&);
 void initPointers();
 void deletePointers();
 
-// Parameters for our hair model
+const unsigned int NUM_BLUR_PASSES = 5;
+// Parameters for our head model
 const glm::vec3 TRANSLATION = glm::vec3(0.0f, 2.0f, 0.0f), SCALE = glm::vec3(6.5f);
 const float ROTATION = -90.0f;
 
 phoenix::Camera* camera;
 phoenix::Utils* utils;
 phoenix::Framebuffer* shadowMapRenderTarget;
-phoenix::Framebuffer* textureSpaceRenderTargets;
+phoenix::Framebuffer* textureSpaceInputs;
+std::array<phoenix::Framebuffer*, 5> blurStretchPassesRenderTargets;
+std::array<phoenix::Framebuffer*, 5> blurPassesRenderTargets;
 phoenix::ShadowCommon* shadowCommon;
 
 float lastX = static_cast<float>(phoenix::SCREEN_WIDTH) / 2.0f;
@@ -36,7 +40,9 @@ float lastY = static_cast<float>(phoenix::SCREEN_HEIGHT) / 2.0f;
 
 bool calibratedCursor = false;
 
-unsigned int anglesTexture, normalMap;
+unsigned int anglesTexture, normalMap, irradianceMap, beckmannTexture, rhoDTexture, specularTexture;
+std::array<unsigned int, 5> blurredIrradianceMaps;
+std::array<unsigned int, 5> blurredStretchMaps;
 
 int main()
 {
@@ -70,6 +76,9 @@ int main()
 	shadowCommon->_floorTexture = phoenix::Utils::loadTexture("../Resources/Textures/shadow_mapping/wood.png");
 	shadowCommon->_objectTexture = phoenix::Utils::loadTexture("../Resources/Objects/head/lambertian.jpg");
 	normalMap = phoenix::Utils::loadTexture("../Resources/Objects/head/normal.png");
+	beckmannTexture = phoenix::Utils::loadTexture("../Resources/Textures/skin/beckmannTex.jpg");
+	rhoDTexture = phoenix::Utils::loadTexture("../Resources/Textures/skin/rho_d.png");
+	specularTexture = phoenix::Utils::loadTexture("../Resources/Textures/skin/skin_spec.jpg");
 	// Generate volume textures and fill them with the cosines and sines of random rotation angles for PCSS
 	generateRandom3DTexture();
 
@@ -85,14 +94,38 @@ int main()
 	phoenix::Shader headShader("../Resources/Shaders/skin/render_pass.vs", "../Resources/Shaders/skin/head.fs");
 	headShader.use();
 	headShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
+	headShader.setInt(phoenix::G_SHADOW_MAP, 1); // Translucent shadow map
 	headShader.setInt(phoenix::G_NORMAL_MAP, 3);
+	headShader.setInt("gBeckmannTexture", 4);
+	headShader.setInt("gRhoDTexture", 5);
+	headShader.setInt(phoenix::G_STRETCH_MAP, 6);
+	headShader.setInt("gSpecularTexture", 7);
+	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
+	{
+		headShader.setInt("gIrradianceMaps[" + std::to_string(i) + "]", i + 8);
+	}
 	headShader.setFloat(phoenix::G_AMBIENT_FACTOR, phoenix::AMBIENT_FACTOR);
 	headShader.setFloat(phoenix::G_SPECULAR_FACTOR, 5.0f);
-	headShader.setVec3(phoenix::G_LIGHT_COLOR, phoenix::LIGHT_COLOR);
+	headShader.setVec3(phoenix::G_LIGHT_COLOR, glm::vec3(1.0f));
+	headShader.setVec3("gLightShadow", glm::vec3(0.1f));
 	phoenix::Shader shadowMapPassShader("../Resources/Shaders/skin/shadow_map_pass.vs", "../Resources/Shaders/skin/shadow_map_pass.fs");
-	phoenix::Shader textureSpacePassShader("../Resources/Shaders/skin/texture_space_pass.vs", "../Resources/Shaders/skin/texture_space_pass.fs");
-	textureSpacePassShader.use();
-	textureSpacePassShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
+	phoenix::Shader textureSpaceInputsPassShader("../Resources/Shaders/skin/texture_space_inputs_pass.vs", "../Resources/Shaders/skin/texture_space_inputs_pass.fs");
+	textureSpaceInputsPassShader.use();
+	textureSpaceInputsPassShader.setInt(phoenix::G_DIFFUSE_TEXTURE, 0);
+	phoenix::Shader convolveStretchUShader("../Resources/Shaders/skin/render_quad.vs", "../Resources/Shaders/skin/convolve_stretch_u.fs");
+	convolveStretchUShader.use();
+	convolveStretchUShader.setInt(phoenix::G_STRETCH_MAP, 0);
+	phoenix::Shader convolveStretchVShader("../Resources/Shaders/skin/render_quad.vs", "../Resources/Shaders/skin/convolve_stretch_v.fs");
+	convolveStretchVShader.use();
+	convolveStretchVShader.setInt(phoenix::G_STRETCH_MAP, 0);
+	phoenix::Shader convolveUShader("../Resources/Shaders/skin/render_quad.vs", "../Resources/Shaders/skin/convolve_u.fs");
+	convolveUShader.use();
+	convolveUShader.setInt(phoenix::G_IRRADIANCE_MAP, 0);
+	convolveUShader.setInt(phoenix::G_STRETCH_MAP, 1);
+	phoenix::Shader convolveVShader("../Resources/Shaders/skin/render_quad.vs", "../Resources/Shaders/skin/convolve_v.fs");
+	convolveVShader.use();
+	convolveVShader.setInt(phoenix::G_IRRADIANCE_MAP, 0);
+	convolveVShader.setInt(phoenix::G_STRETCH_MAP, 1);
 	phoenix::Shader renderQuadShader("../Resources/Shaders/skin/render_quad.vs", "../Resources/Shaders/skin/render_quad.fs");
 	renderQuadShader.use();
 	renderQuadShader.setInt(phoenix::G_RENDER_TARGET, 0);
@@ -102,10 +135,25 @@ int main()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapRenderTarget->_FBO);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-	glBindFramebuffer(GL_FRAMEBUFFER, textureSpaceRenderTargets->_FBO);
-	unsigned int irradianceMap = textureSpaceRenderTargets->genAttachment(GL_RGBA32F, GL_RGBA, GL_FLOAT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, textureSpaceInputs->_FBO);
+	irradianceMap = textureSpaceInputs->genAttachment(GL_RGBA32F, GL_RGBA, GL_FLOAT);
 	GLenum bufs[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 	glDrawBuffers(2, bufs);
+
+	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, blurStretchPassesRenderTargets[i]->_FBO);
+		blurredStretchMaps[i] = blurStretchPassesRenderTargets[i]->genAttachment(GL_RGBA, GL_RGBA, GL_FLOAT);
+		glDrawBuffers(2, bufs);
+	}
+
+	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, blurPassesRenderTargets[i]->_FBO);
+		blurredIrradianceMaps[i] = blurPassesRenderTargets[i]->genAttachment(GL_RGBA, GL_RGBA, GL_FLOAT);
+		glDrawBuffers(2, bufs);
+	}
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -121,10 +169,9 @@ int main()
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Shadow map pass
 		execShadowMapPass(shadowMapPassShader, head);
-		// Stretch map pass
-		execTextureSpacePass(textureSpacePassShader, head);
+		execTextureSpaceInputsPass(textureSpaceInputsPassShader, head);
+		execBlurPasses(convolveStretchUShader, convolveStretchVShader, convolveUShader, convolveVShader);
 
 		glViewport(0, 0, phoenix::SCREEN_WIDTH, phoenix::SCREEN_HEIGHT);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -132,15 +179,27 @@ int main()
 		// Render pass
 		if (shadowCommon->_renderMode == 1)
 		{
-			utils->renderQuad(renderQuadShader, shadowMapRenderTarget->_textureID);
+			utils->renderQuad(renderQuadShader, irradianceMap);
 		}
 		else if (shadowCommon->_renderMode == 2)
 		{
-			utils->renderQuad(renderQuadShader, textureSpaceRenderTargets->_textureID);
+			utils->renderQuad(renderQuadShader, blurredIrradianceMaps[0]);
 		}
 		else if (shadowCommon->_renderMode == 3)
 		{
-			utils->renderQuad(renderQuadShader, irradianceMap);
+			utils->renderQuad(renderQuadShader, blurredIrradianceMaps[1]);
+		}
+		else if (shadowCommon->_renderMode == 4)
+		{
+			utils->renderQuad(renderQuadShader, blurredIrradianceMaps[2]);
+		}
+		else if (shadowCommon->_renderMode == 5)
+		{
+			utils->renderQuad(renderQuadShader, blurredIrradianceMaps[3]);
+		}
+		else if (shadowCommon->_renderMode == 6)
+		{
+			utils->renderQuad(renderQuadShader, blurredIrradianceMaps[4]);
 		}
 		else
 		{
@@ -225,6 +284,26 @@ void setInputs(const phoenix::Shader& shader, bool useObjTexture)
 	glBindTexture(GL_TEXTURE_3D, anglesTexture);
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, normalMap);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, beckmannTexture);
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D, rhoDTexture);
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, textureSpaceInputs->_textureID);
+	glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_2D, specularTexture);
+	for (size_t i = 0; i <= NUM_BLUR_PASSES; ++i)
+	{
+		glActiveTexture(GL_TEXTURE8 + i);
+		if (i > 0)
+		{
+			glBindTexture(GL_TEXTURE_2D, blurredIrradianceMaps[i - 1]);
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, irradianceMap);
+		}
+	}
 }
 
 void execShadowMapPass(const phoenix::Shader& shader, phoenix::Model& object)
@@ -240,15 +319,53 @@ void execShadowMapPass(const phoenix::Shader& shader, phoenix::Model& object)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void execTextureSpacePass(const phoenix::Shader& shader, phoenix::Model& object)
+void execTextureSpaceInputsPass(const phoenix::Shader& shader, phoenix::Model& object)
 {
 	glViewport(0, 0, phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT);
-	glBindFramebuffer(GL_FRAMEBUFFER, textureSpaceRenderTargets->_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, textureSpaceInputs->_FBO);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	shadowCommon->changeColorTexture(shadowCommon->_objectTexture);
 	shadowCommon->renderObject(utils, shader, object, TRANSLATION, ROTATION, SCALE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void execBlurPasses(const phoenix::Shader& convolveStretchUShader, const phoenix::Shader& convolveStretchVShader, const phoenix::Shader& convolveUShader, const phoenix::Shader& convolveVShader)
+{
+	glViewport(0, 0, phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT);
+	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, blurStretchPassesRenderTargets[i]->_FBO);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		convolveStretchUShader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, i > 0 ? blurredStretchMaps[i - 1] : textureSpaceInputs->_textureID);
+		utils->renderQuad(convolveStretchUShader);
+
+		convolveStretchVShader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, blurStretchPassesRenderTargets[i]->_textureID);
+		utils->renderQuad(convolveStretchVShader);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, blurPassesRenderTargets[i]->_FBO);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		convolveUShader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, i > 0 ? blurredIrradianceMaps[i - 1] : irradianceMap);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, blurredStretchMaps[i]);
+		utils->renderQuad(convolveUShader);
+
+		convolveVShader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, blurPassesRenderTargets[i]->_textureID);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, blurredStretchMaps[i]);
+		utils->renderQuad(convolveVShader);
+	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -264,7 +381,15 @@ void initPointers()
 {
 	shadowCommon = new phoenix::ShadowCommon();
 	shadowMapRenderTarget = new phoenix::Framebuffer(phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT, true);
-	textureSpaceRenderTargets = new phoenix::Framebuffer(phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT, false, true);
+	textureSpaceInputs = new phoenix::Framebuffer(phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT, false, true);
+	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
+	{
+		blurStretchPassesRenderTargets[i] = new phoenix::Framebuffer(phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT, false, true);
+	}
+	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
+	{
+		blurPassesRenderTargets[i] = new phoenix::Framebuffer(phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT, false, true);
+	}
 	utils = new phoenix::Utils();
 	camera = new phoenix::Camera();
 }
@@ -273,7 +398,15 @@ void deletePointers()
 {
 	delete camera;
 	delete utils;
-	delete textureSpaceRenderTargets;
+	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
+	{
+		delete blurPassesRenderTargets[i];
+	}
+	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
+	{
+		delete blurStretchPassesRenderTargets[i];
+	}
+	delete textureSpaceInputs;
 	delete shadowMapRenderTarget;
 	delete shadowCommon;
 }

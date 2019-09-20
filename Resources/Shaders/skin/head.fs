@@ -11,11 +11,18 @@ in VS_OUT {
 } fs_in;
 
 uniform sampler2D gDiffuseTexture;
+uniform sampler2D gShadowMap;
 uniform sampler2D gNormalMap;
+uniform sampler2D gBeckmannTexture;
+uniform sampler2D gRhoDTexture;
+uniform sampler2D gStretchMap;
+uniform sampler2D gSpecularTexture;
+uniform sampler2D gIrradianceMaps[6];
 
 uniform vec3 gLightPos;
 uniform vec3 gViewPos;
 uniform vec3 gLightColor;
+uniform vec3 gLightShadow;
 uniform float gAmbientFactor;
 uniform float gSpecularFactor;
 
