@@ -40,7 +40,7 @@ float lastY = static_cast<float>(phoenix::SCREEN_HEIGHT) / 2.0f;
 
 bool calibratedCursor = false;
 
-unsigned int anglesTexture, normalMap, irradianceMap, beckmannTexture, rhoDTexture, specularTexture;
+unsigned int anglesTexture, normalMap, irradianceMap, beckmannTexture, specularTexture;
 std::array<unsigned int, 5> blurredIrradianceMaps;
 std::array<unsigned int, 5> blurredStretchMaps;
 
@@ -77,7 +77,6 @@ int main()
 	shadowCommon->_objectTexture = phoenix::Utils::loadTexture("../Resources/Objects/head/lambertian.jpg");
 	normalMap = phoenix::Utils::loadTexture("../Resources/Objects/head/normal.png");
 	beckmannTexture = phoenix::Utils::loadTexture("../Resources/Textures/skin/beckmannTex.jpg");
-	rhoDTexture = phoenix::Utils::loadTexture("../Resources/Textures/skin/rho_d.png");
 	specularTexture = phoenix::Utils::loadTexture("../Resources/Textures/skin/skin_spec.jpg");
 	// Generate volume textures and fill them with the cosines and sines of random rotation angles for PCSS
 	generateRandom3DTexture();
@@ -97,17 +96,15 @@ int main()
 	headShader.setInt(phoenix::G_SHADOW_MAP, 1); // Translucent shadow map
 	headShader.setInt(phoenix::G_NORMAL_MAP, 3);
 	headShader.setInt("gBeckmannTexture", 4);
-	headShader.setInt("gRhoDTexture", 5);
-	headShader.setInt(phoenix::G_STRETCH_MAP, 6);
-	headShader.setInt("gSpecularTexture", 7);
+	headShader.setInt(phoenix::G_STRETCH_MAP, 5);
+	headShader.setInt("gSpecularTexture", 6);
 	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
 	{
-		headShader.setInt("gIrradianceMaps[" + std::to_string(i) + "]", i + 8);
+		headShader.setInt("gIrradianceMaps[" + std::to_string(i) + "]", i + 7);
 	}
-	headShader.setFloat(phoenix::G_AMBIENT_FACTOR, phoenix::AMBIENT_FACTOR);
+	headShader.setFloat(phoenix::G_AMBIENT_FACTOR, 0.4f);
 	headShader.setFloat(phoenix::G_SPECULAR_FACTOR, 5.0f);
 	headShader.setVec3(phoenix::G_LIGHT_COLOR, glm::vec3(1.0f));
-	headShader.setVec3("gLightShadow", glm::vec3(0.1f));
 	phoenix::Shader shadowMapPassShader("../Resources/Shaders/skin/shadow_map_pass.vs", "../Resources/Shaders/skin/shadow_map_pass.fs");
 	phoenix::Shader textureSpaceInputsPassShader("../Resources/Shaders/skin/texture_space_inputs_pass.vs", "../Resources/Shaders/skin/texture_space_inputs_pass.fs");
 	textureSpaceInputsPassShader.use();
@@ -287,14 +284,12 @@ void setInputs(const phoenix::Shader& shader, bool useObjTexture)
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D, beckmannTexture);
 	glActiveTexture(GL_TEXTURE5);
-	glBindTexture(GL_TEXTURE_2D, rhoDTexture);
-	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_2D, textureSpaceInputs->_textureID);
-	glActiveTexture(GL_TEXTURE7);
+	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_2D, specularTexture);
 	for (size_t i = 0; i <= NUM_BLUR_PASSES; ++i)
 	{
-		glActiveTexture(GL_TEXTURE8 + i);
+		glActiveTexture(GL_TEXTURE7 + i);
 		if (i > 0)
 		{
 			glBindTexture(GL_TEXTURE_2D, blurredIrradianceMaps[i - 1]);
