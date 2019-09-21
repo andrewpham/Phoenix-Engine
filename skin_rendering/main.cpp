@@ -141,14 +141,14 @@ int main()
 	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, blurStretchPassesRenderTargets[i]->_FBO);
-		blurredStretchMaps[i] = blurStretchPassesRenderTargets[i]->genAttachment(GL_RGBA, GL_RGBA, GL_FLOAT);
+		blurredStretchMaps[i] = blurStretchPassesRenderTargets[i]->genAttachment(GL_RGBA32F, GL_RGBA, GL_FLOAT);
 		glDrawBuffers(2, bufs);
 	}
 
 	for (size_t i = 0; i < NUM_BLUR_PASSES; ++i)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, blurPassesRenderTargets[i]->_FBO);
-		blurredIrradianceMaps[i] = blurPassesRenderTargets[i]->genAttachment(GL_RGBA, GL_RGBA, GL_FLOAT);
+		blurredIrradianceMaps[i] = blurPassesRenderTargets[i]->genAttachment(GL_RGBA32F, GL_RGBA, GL_FLOAT);
 		glDrawBuffers(2, bufs);
 	}
 
