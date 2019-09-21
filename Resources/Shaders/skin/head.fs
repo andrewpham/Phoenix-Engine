@@ -2,7 +2,7 @@
 out vec4 FragColor;
 
 const float MIX = 0.5f;
-const float CORRECTION_FACTOR = 100.0f;
+const float CORRECTION_FACTOR = 50.0f;
 const int NUM_CONVOLUTIONS = 6;
 const vec3 GAUSSIAN_WEIGHTS[NUM_CONVOLUTIONS] = vec3[]
     (vec3(0.233f, 0.455f, 0.649f),
