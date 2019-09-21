@@ -24,7 +24,6 @@ Glad, GLFW, OpenGL Mathematics (GLM), and Assimp.
 ![](images/csm.png "Cascaded Shadow Mapping")
 ![](images/ssr.png "Screen Space Reflections")
 ![](images/tds.png "Tiled Deferred Shading")
-![](images/hair.png "Hair Rendering")
 
 ### Resources
 Brian Karis' [Real Shading in Unreal Engine 4](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf)  
