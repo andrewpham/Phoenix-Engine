@@ -46,4 +46,6 @@ Ravi Ramamoorthi's [An Efficient Representation for Irradiance Environment Maps]
 Carsten Dachsbacher's [Reflective Shadow Maps](http://www.klayge.org/material/3_12/GI/rsm.pdf) Paper  
 Thorsten Scheuermann’s SIGGRAPH Talk on [Practical Real-Time Hair Rendering and Shading](https://pdfs.semanticscholar.org/aa4c/9b498a48ec9eff1d93eaca646b3c9d2490b1.pdf)  
 Thorsten Scheuermann’s GDC Talk on [Hair Rendering and Shading](http://web.engr.oregonstate.edu/~mjb/cs519/Projects/Papers/HairRendering.pdf)  
-[Practical Real-Time Hair Rendering and Shading](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.607.1272&rep=rep1&type=pdf) Paper
+[Practical Real-Time Hair Rendering and Shading](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.607.1272&rep=rep1&type=pdf) Paper  
+The [Advanced Techniques for Realistic Real-Time Skin Rendering](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch14.html) Chapter in GPU Gems 3  
+S. James Lee’s [Realistic Skin Rendering](https://www.evl.uic.edu/sjames/cs525/project3.html) Resource
