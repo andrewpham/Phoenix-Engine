@@ -2,7 +2,8 @@
 out vec4 FragColor;
 
 const float MIX = 0.5f;
-const float CORRECTION_FACTOR = 50.0f;
+const float SPECULAR_CORRECTION_FACTOR = 50.0f;
+const float DIFFUSE_CORRECTION_FACTOR = 1.4f;
 const int NUM_CONVOLUTIONS = 6;
 const vec3 GAUSSIAN_WEIGHTS[NUM_CONVOLUTIONS] = vec3[]
     (vec3(0.233f, 0.455f, 0.649f),
@@ -77,10 +78,6 @@ float KS_Skin_Specular(float m, float rho_s)
 
 vec4 finalSkinShader()
 {
-    vec3 color = texture(gDiffuseTexture, fs_in.TexCoords).rgb;
-
-    vec3 ambientLight = gAmbientFactor * color;
-
     // The total diffuse light exiting the surface
     vec3 diffuseLight = vec3(0.0f);
 
@@ -88,7 +85,7 @@ vec4 finalSkinShader()
     for (int i = 0; i < NUM_CONVOLUTIONS; ++i)
     {
         irradTaps[i] = texture(gIrradianceMaps[i], FLIPPED_UV);
-        diffuseLight += GAUSSIAN_WEIGHTS[i] * irradTaps[i].xyz;
+        diffuseLight += DIFFUSE_CORRECTION_FACTOR * GAUSSIAN_WEIGHTS[i] * irradTaps[i].xyz;
     }
 
     // Renormalize diffusion profiles to white
@@ -119,7 +116,7 @@ vec4 finalSkinShader()
     diffuseLight += GAUSSIAN_WEIGHTS[5] / normConst * fades.w * blendFactor6 * texture(gIrradianceMaps[5], TSMtap.yz).xyz;
 
     // Determine skin color from a diffuseColor map
-    diffuseLight *= pow(color, vec3(1.0f - MIX));
+    diffuseLight *= pow(texture(gDiffuseTexture, fs_in.TexCoords).rgb, vec3(1.0f - MIX));
 
     vec4 specTap = texture(gSpecularTexture, FLIPPED_UV); // rho_s and m (roughness)
     float m = specTap.w * 0.09f + 0.23f;
@@ -127,9 +124,9 @@ vec4 finalSkinShader()
     rho_s *= float(specTap.x > 0.1f);
 
     // Compute specular for each light
-    vec3 specularLight = CORRECTION_FACTOR * gLightColor * KS_Skin_Specular(m, rho_s);
+    vec3 specularLight = SPECULAR_CORRECTION_FACTOR * gLightColor * KS_Skin_Specular(m, rho_s);
 
-    return vec4(ambientLight + diffuseLight + specularLight, 1.0f);
+    return vec4(diffuseLight + specularLight, 1.0f);
 }
 
 vec4 calcBlinnPhongColor()

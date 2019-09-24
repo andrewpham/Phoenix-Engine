@@ -2,7 +2,7 @@
 Real-time physically based renderin'.
 
 ### Features
-Variance shadow mapping with Gaussian filtering using a ping-pong FBO or compute shaders, percentage-closer soft shadows and reflective shadow maps using Poisson disk sampling, cascaded shadow mapping, screen space reflections using deferred shading and ray marching, physically based rendering with image-based lighting and a spherical harmonics probe, hair rendering, tiled deferred shading using compute shaders, and indirect illumination using voxel cone tracing.
+Variance shadow mapping with Gaussian filtering using a ping-pong FBO or compute shaders, percentage-closer soft shadows and reflective shadow maps using Poisson disk sampling, cascaded shadow mapping, screen space reflections using deferred shading and ray marching, physically based rendering with image-based lighting and a spherical harmonics probe, hair and skin rendering, tiled deferred shading using compute shaders, and indirect illumination using voxel cone tracing.
 
 Mesh loading using Assimp.  
 Texture loading using nothings' stb library.
@@ -24,6 +24,7 @@ Glad, GLFW, OpenGL Mathematics (GLM), and Assimp.
 ![](images/csm.png "Cascaded Shadow Mapping")
 ![](images/ssr.png "Screen Space Reflections")
 ![](images/tds.png "Tiled Deferred Shading")
+![](images/sss.png "Subsurface Scattering Using Texture Space Diffusion")
 
 ### Resources
 Brian Karis' [Real Shading in Unreal Engine 4](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf)  

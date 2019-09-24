@@ -9,10 +9,10 @@ in vec2 TexCoords;
 
 uniform sampler2D gDiffuseTexture;
 
-vec2 computeStretchMap(vec3 worldCoord)
+vec2 computeStretchMap()
 {
-    vec3 derivu = dFdx(worldCoord);
-    vec3 derivv = dFdy(worldCoord);
+    vec3 derivu = dFdx(WorldPos);
+    vec3 derivv = dFdy(WorldPos);
     float stretchU = SCALE / length(derivu);
     float stretchV = SCALE / length(derivv);
     return vec2(stretchU, stretchV);
@@ -20,7 +20,7 @@ vec2 computeStretchMap(vec3 worldCoord)
 
 void main()
 {
-    StretchMap = vec4(computeStretchMap(WorldPos), 0.0f, 1.0f);
+    StretchMap = vec4(computeStretchMap(), 0.0f, 1.0f);
     vec2 texCoords = TexCoords * 0.5f + 0.5f;
     texCoords.y = 1.0f - texCoords.y;
     IrradianceMap = texture(gDiffuseTexture, texCoords);
