@@ -20,7 +20,7 @@ namespace phoenix
 		void renderCube();
 		static Mesh* createQuad();
 		static unsigned int loadTexture(char const*);
-		virtual void processInput(GLFWwindow*, Camera*);
+		virtual void processInput(GLFWwindow*, Camera*, bool = true);
 
 	private:
 		unsigned int _planeVAO = 0, _quadVAO = 0, _sphereVAO = 0, _cubeVAO = 0, _numIndices;

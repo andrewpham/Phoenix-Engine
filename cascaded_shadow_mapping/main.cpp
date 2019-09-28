@@ -28,7 +28,6 @@ void initPointers();
 void deletePointers();
 
 const float CORRECTION_FACTOR = 80.0f;
-const unsigned int NUM_FRUSTUM_CORNERS = 8;
 const std::array<float, 4> CASCADE_ENDS{ {phoenix::PERSPECTIVE_NEAR_PLANE, 5.0f, 10.0f, phoenix::PERSPECTIVE_FAR_PLANE} };
 
 phoenix::Camera* camera;
@@ -255,21 +254,21 @@ void calcOrthoProjs()
 		float yn = CASCADE_ENDS[i] * tanHalfVFOV;
 		float yf = CASCADE_ENDS[i + 1] * tanHalfVFOV;
 
-		std::array<glm::vec4, 8> frustumCorners{ {
+		std::array<glm::vec4, phoenix::NUM_FRUSTUM_CORNERS> frustumCorners{ {
 			// Near plane
-			glm::vec4(xn, yn, CASCADE_ENDS[i], 1.0),
-			glm::vec4(-xn, yn, CASCADE_ENDS[i], 1.0),
-			glm::vec4(xn, -yn, CASCADE_ENDS[i], 1.0),
-			glm::vec4(-xn, -yn, CASCADE_ENDS[i], 1.0),
+			glm::vec4(xn, yn, CASCADE_ENDS[i], 1.0f),
+			glm::vec4(-xn, yn, CASCADE_ENDS[i], 1.0f),
+			glm::vec4(xn, -yn, CASCADE_ENDS[i], 1.0f),
+			glm::vec4(-xn, -yn, CASCADE_ENDS[i], 1.0f),
 
 			// Far plane
-			glm::vec4(xf, yf, CASCADE_ENDS[i + 1], 1.0),
-			glm::vec4(-xf, yf, CASCADE_ENDS[i + 1], 1.0),
-			glm::vec4(xf, -yf, CASCADE_ENDS[i + 1], 1.0),
-			glm::vec4(-xf, -yf, CASCADE_ENDS[i + 1], 1.0)
+			glm::vec4(xf, yf, CASCADE_ENDS[i + 1], 1.0f),
+			glm::vec4(-xf, yf, CASCADE_ENDS[i + 1], 1.0f),
+			glm::vec4(xf, -yf, CASCADE_ENDS[i + 1], 1.0f),
+			glm::vec4(-xf, -yf, CASCADE_ENDS[i + 1], 1.0f)
 		} };
 
-		std::array<glm::vec4, 8> frustumCornersL;
+		std::array<glm::vec4, phoenix::NUM_FRUSTUM_CORNERS> frustumCornersL;
 
 		float minX = std::numeric_limits<float>::max();
 		float maxX = std::numeric_limits<float>::min();
@@ -278,8 +277,8 @@ void calcOrthoProjs()
 		float minZ = std::numeric_limits<float>::max();
 		float maxZ = std::numeric_limits<float>::min();
 
-		for (size_t j = 0; j < NUM_FRUSTUM_CORNERS; j++) {
-
+		for (size_t j = 0; j < phoenix::NUM_FRUSTUM_CORNERS; ++i)
+		{
 			// Transform the frustum coordinate from view to world space
 			glm::vec4 vW = cameraInverse * frustumCorners[j];
 

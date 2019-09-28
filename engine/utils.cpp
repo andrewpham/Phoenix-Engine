@@ -331,7 +331,7 @@ namespace phoenix
 		return textureID;
 	}
 
-	void Utils::processInput(GLFWwindow* window, Camera* camera)
+	void Utils::processInput(GLFWwindow* window, Camera* camera, bool isRH)
 	{
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		{
@@ -340,11 +340,11 @@ namespace phoenix
 
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		{
-			camera->processKeyPress(phoenix::FORWARD, _deltaTime);
+			camera->processKeyPress(isRH ? FORWARD : BACKWARD, _deltaTime);
 		}
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		{
-			camera->processKeyPress(phoenix::BACKWARD, _deltaTime);
+			camera->processKeyPress(isRH? BACKWARD : FORWARD, _deltaTime);
 		}
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		{

@@ -107,7 +107,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gBufferPassShader.use();
 		glm::mat4 world = glm::mat4(1.0f);
-		world = glm::scale(world, glm::vec3(0.02f));
+		world = glm::scale(world, glm::vec3(phoenix::OBJECT_SCALE));
 		gBufferPassShader.setMat4(phoenix::G_WVP, utils->_projection * utils->_view * world);
 		gBufferPassShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::transpose(glm::inverse(glm::mat3(world))));
 		sponza.render(gBufferPassShader);

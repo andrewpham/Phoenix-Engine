@@ -34,6 +34,7 @@ phoenix::Framebuffer* textureSpaceInputs;
 std::array<phoenix::Framebuffer*, 5> blurStretchPassesRenderTargets;
 std::array<phoenix::Framebuffer*, 5> blurPassesRenderTargets;
 phoenix::ShadowCommon* shadowCommon;
+GLFWwindow* window;
 
 float lastX = static_cast<float>(phoenix::SCREEN_WIDTH) / 2.0f;
 float lastY = static_cast<float>(phoenix::SCREEN_HEIGHT) / 2.0f;
@@ -50,7 +51,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	GLFWwindow* window = glfwCreateWindow(phoenix::SCREEN_WIDTH, phoenix::SCREEN_HEIGHT, "Skin Rendering", nullptr, nullptr);
+	window = glfwCreateWindow(phoenix::SCREEN_WIDTH, phoenix::SCREEN_HEIGHT, "Skin Rendering", nullptr, nullptr);
 	if (!window)
 	{
 		std::cerr << phoenix::GLFW_CREATE_WINDOW_ERROR;

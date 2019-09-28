@@ -23,7 +23,7 @@ namespace phoenix
 
 	struct DirectLight : public Light
 	{
-		glm::vec3 _direction = glm::vec3(0.09f, -0.04f, -0.04f);
+		glm::vec3 _direction = glm::vec3(9.0f, -5.41f, -3.62f);
 
 		void setUniforms(const Shader&);
 	};

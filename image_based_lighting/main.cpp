@@ -50,13 +50,13 @@ bool renderBRDFIntegrationMap = false;
 unsigned int renderMode = 0, irradianceMapLightingMode = 0;
 unsigned int FBO, RBO;
 
-const std::array<glm::vec3, 8> LIGHT_POSITIONS{ {
+const std::array<glm::vec3, 4> LIGHT_POSITIONS{ {
 	glm::vec3(-10.0f, 10.0f, 10.0f),
 	glm::vec3(10.0f, 10.0f, 10.0f),
 	glm::vec3(-10.0f, -10.0f, 10.0f),
 	glm::vec3(10.0f, -10.0f, 10.0f)
 } };
-const std::array<glm::vec3, 8> LIGHT_COLORS{ {
+const std::array<glm::vec3, 4> LIGHT_COLORS{ {
 	glm::vec3(300.0f, 300.0f, 300.0f),
 	glm::vec3(300.0f, 300.0f, 300.0f),
 	glm::vec3(300.0f, 300.0f, 300.0f),

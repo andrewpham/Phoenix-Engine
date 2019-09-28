@@ -129,7 +129,7 @@ int main()
 		gBufferPassShader.setMat4(phoenix::G_VP, utils->_projection * utils->_view);
 		gBufferPassShader.setMat4(phoenix::G_VIEW_MATRIX, utils->_view);
 		glm::mat4 world = glm::mat4(1.0f);
-		world = glm::scale(world, glm::vec3(0.02f));
+		world = glm::scale(world, glm::vec3(phoenix::OBJECT_SCALE));
 		gBufferPassShader.setMat4(phoenix::G_WORLD_MATRIX, world);
 		gBufferPassShader.setMat3(phoenix::G_NORMAL_MATRIX, glm::transpose(glm::inverse(glm::mat3(world))));
 		sponza.render(gBufferPassShader);
