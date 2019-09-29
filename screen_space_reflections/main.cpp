@@ -86,17 +86,17 @@ int main()
 	unsigned int floorSpecularTexture = phoenix::Utils::loadTexture("../Resources/Textures/ssr/1_spec.png");
 
 	phoenix::Shader gBufferPassShader("../Resources/Shaders/screen_space_reflections/g_buffer_pass.vs", "../Resources/Shaders/screen_space_reflections/g_buffer_pass.fs");
-	phoenix::Shader lightingPassShader("../Resources/Shaders/screen_space_reflections/lighting_pass.vs", "../Resources/Shaders/screen_space_reflections/lighting_pass.fs");
+	phoenix::Shader lightingPassShader("../Resources/Shaders/screen_space_reflections/render_quad.vs", "../Resources/Shaders/screen_space_reflections/lighting_pass.fs");
 	lightingPassShader.use();
 	lightingPassShader.setInt(phoenix::G_POSITION_MAP, 0);
 	lightingPassShader.setInt(phoenix::G_NORMAL_MAP, 1);
 	lightingPassShader.setInt(phoenix::G_ALBEDO_SPECULAR_MAP, 2);
-	phoenix::Shader renderPassShader("../Resources/Shaders/screen_space_reflections/render_pass.vs", "../Resources/Shaders/screen_space_reflections/render_pass.fs");
+	phoenix::Shader renderPassShader("../Resources/Shaders/screen_space_reflections/render_quad.vs", "../Resources/Shaders/screen_space_reflections/render_pass.fs");
 	renderPassShader.use();
 	renderPassShader.setInt(phoenix::G_POSITION_MAP, 0);
 	renderPassShader.setInt(phoenix::G_NORMAL_MAP, 1);
 	renderPassShader.setInt(phoenix::G_ALBEDO_SPECULAR_MAP, 2);
-	renderPassShader.setInt("gPreviousFrameMap", 3);
+	renderPassShader.setInt(phoenix::G_PREVIOUS_FRAME_MAP, 3);
 	renderPassShader.setInt(phoenix::G_METALLIC_MAP, 4);
 
 	phoenix::Model sponza("../Resources/Objects/sponza/sponza.obj");

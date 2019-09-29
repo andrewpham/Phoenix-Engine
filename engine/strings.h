@@ -36,6 +36,7 @@ namespace phoenix
 	static const std::string G_AO_MAP = "gAOMap";
 	static const std::string G_IRRADIANCE_MAP = "gIrradianceMap";
 	static const std::string G_STRETCH_MAP = "gStretchMap";
+	static const std::string G_PREVIOUS_FRAME_MAP = "gPreviousFrameMap";
 
 	// Error messages
 	static const std::string GLFW_CREATE_WINDOW_ERROR = "Failed to create GLFW window!\n";

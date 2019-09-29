@@ -17,6 +17,7 @@ void setLightSpaceVP(const phoenix::Shader&);
 void renderObject(const phoenix::Shader&, phoenix::Model&);
 void execShadowMapPass(const phoenix::Shader&, phoenix::Model&);
 void execGeometryPass(const phoenix::Shader&, phoenix::Model&);
+void execLightingPass(const phoenix::Shader&);
 void execRenderPass(const phoenix::Shader&);
 void initPointers();
 void deletePointers();
@@ -33,7 +34,7 @@ float lastY = static_cast<float>(phoenix::SCREEN_HEIGHT) / 2.0f;
 
 bool calibratedCursor = false;
 
-unsigned int normalMap, albedoSpecularMap;
+unsigned int normalMap, albedoSpecularMap, previousFrameMap;
 phoenix::DirectLight directLight;
 
 int main()
@@ -69,13 +70,16 @@ int main()
 
 	phoenix::Shader shadowMapPassShader("../Resources/Shaders/god_rays/shadow_map_pass.vs", "../Resources/Shaders/god_rays/shadow_map_pass.fs");
 	phoenix::Shader gBufferPassShader("../Resources/Shaders/god_rays/g_buffer_pass.vs", "../Resources/Shaders/god_rays/g_buffer_pass.fs");
-	phoenix::Shader renderPassShader("../Resources/Shaders/god_rays/render_pass.vs", "../Resources/Shaders/god_rays/render_pass.fs");
+	phoenix::Shader lightingPassShader("../Resources/Shaders/god_rays/render_quad.vs", "../Resources/Shaders/god_rays/lighting_pass.fs");
+	lightingPassShader.use();
+	lightingPassShader.setInt(phoenix::G_POSITION_MAP, 0);
+	lightingPassShader.setInt(phoenix::G_NORMAL_MAP, 1);
+	lightingPassShader.setInt(phoenix::G_ALBEDO_SPECULAR_MAP, 2);
+	lightingPassShader.setInt(phoenix::G_SHADOW_MAP, 3);
+	lightingPassShader.setFloat(phoenix::G_AMBIENT_FACTOR, 0.1f);
+	phoenix::Shader renderPassShader("../Resources/Shaders/god_rays/render_quad.vs", "../Resources/Shaders/god_rays/render_pass.fs");
 	renderPassShader.use();
-	renderPassShader.setInt(phoenix::G_POSITION_MAP, 0);
-	renderPassShader.setInt(phoenix::G_NORMAL_MAP, 1);
-	renderPassShader.setInt(phoenix::G_ALBEDO_SPECULAR_MAP, 2);
-	renderPassShader.setInt(phoenix::G_SHADOW_MAP, 3);
-	renderPassShader.setFloat(phoenix::G_AMBIENT_FACTOR, 0.1f);
+	renderPassShader.setInt(phoenix::G_PREVIOUS_FRAME_MAP, 0);
 	phoenix::Shader renderQuadShader("../Resources/Shaders/god_rays/render_quad.vs", "../Resources/Shaders/god_rays/render_quad.fs");
 	renderQuadShader.use();
 	renderQuadShader.setInt(phoenix::G_RENDER_TARGET, 0);
@@ -88,8 +92,9 @@ int main()
 	glBindFramebuffer(GL_FRAMEBUFFER, gBuffer->_FBO);
 	normalMap = gBuffer->genAttachment(GL_RGB16F, GL_RGB, GL_FLOAT);
 	albedoSpecularMap = gBuffer->genAttachment(GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
-	GLenum bufs[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-	glDrawBuffers(3, bufs);
+	previousFrameMap = gBuffer->genAttachment(GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+	GLenum bufs[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+	glDrawBuffers(4, bufs);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -105,7 +110,6 @@ int main()
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 		execShadowMapPass(shadowMapPassShader, sponza);
-		execGeometryPass(gBufferPassShader, sponza);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -116,6 +120,8 @@ int main()
 		}
 		else
 		{
+			execGeometryPass(gBufferPassShader, sponza);
+			execLightingPass(lightingPassShader);
 			execRenderPass(renderPassShader);
 		}
 
@@ -249,11 +255,11 @@ void execShadowMapPass(const phoenix::Shader& shader, phoenix::Model& object)
 	renderObject(shader, object);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, phoenix::SCREEN_WIDTH, phoenix::SCREEN_HEIGHT);
 }
 
 void execGeometryPass(const phoenix::Shader& shader, phoenix::Model& object)
 {
-	glViewport(0, 0, phoenix::SCREEN_WIDTH, phoenix::SCREEN_HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, gBuffer->_FBO);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -266,8 +272,10 @@ void execGeometryPass(const phoenix::Shader& shader, phoenix::Model& object)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void execRenderPass(const phoenix::Shader& shader)
+void execLightingPass(const phoenix::Shader& shader)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, gBuffer->_FBO);
+
 	setLightSpaceVP(shader);
 	shader.setVec3(phoenix::G_VIEW_POS, camera->_position);
 	shader.setMat4(phoenix::G_INVERSE_VIEW_MATRIX, glm::inverse(utils->_view));
@@ -280,6 +288,16 @@ void execRenderPass(const phoenix::Shader& shader)
 	glBindTexture(GL_TEXTURE_2D, albedoSpecularMap);
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, shadowMapRenderTarget->_textureID);
+	utils->renderQuad(shader);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void execRenderPass(const phoenix::Shader& shader)
+{
+	shader.use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, previousFrameMap);
 	utils->renderQuad(shader);
 }
 
