@@ -19,8 +19,6 @@ void deletePointers();
 
 const float CORRECTION_FACTOR = 0.0f;
 
-const std::string G_DIR = "gDir";
-
 phoenix::Camera* camera;
 phoenix::Utils* utils;
 phoenix::ShadowCommon* shadowCommon;
@@ -190,12 +188,12 @@ void execShadowMapPass(const phoenix::Shader& shadowMapPassShader, const phoenix
 
 	blurShader.use();
 
-	blurShader.setIVec2(G_DIR, glm::ivec2(1, 0));
+	blurShader.setIVec2(phoenix::G_DIR, glm::ivec2(1, 0));
 	glBindImageTexture(0, shadowMaps[0], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 	glBindImageTexture(1, shadowMaps[1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 	glDispatchCompute(256, 256, 1);
 
-	blurShader.setIVec2(G_DIR, glm::ivec2(0, 1));
+	blurShader.setIVec2(phoenix::G_DIR, glm::ivec2(0, 1));
 	glBindImageTexture(0, shadowMaps[1], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 	glBindImageTexture(1, shadowMaps[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 	glDispatchCompute(256, 256, 1);

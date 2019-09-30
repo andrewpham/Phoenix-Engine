@@ -18,7 +18,7 @@ void renderObject(const phoenix::Shader&, phoenix::Model&);
 void execShadowMapPass(const phoenix::Shader&, phoenix::Model&);
 void execGeometryPass(const phoenix::Shader&, phoenix::Model&);
 void execLightingPass(const phoenix::Shader&);
-void execRenderPass(const phoenix::Shader&);
+void execBlurPasses(const phoenix::Shader&);
 void initPointers();
 void deletePointers();
 
@@ -26,6 +26,7 @@ phoenix::Camera* camera;
 phoenix::Utils* utils;
 phoenix::Framebuffer* shadowMapRenderTarget;
 phoenix::Framebuffer* gBuffer;
+phoenix::Framebuffer* blurRenderTarget;
 phoenix::ShadowCommon* shadowCommon;
 GLFWwindow* window;
 
@@ -77,9 +78,9 @@ int main()
 	lightingPassShader.setInt(phoenix::G_ALBEDO_SPECULAR_MAP, 2);
 	lightingPassShader.setInt(phoenix::G_SHADOW_MAP, 3);
 	lightingPassShader.setFloat(phoenix::G_AMBIENT_FACTOR, 0.1f);
-	phoenix::Shader renderPassShader("../Resources/Shaders/god_rays/render_quad.vs", "../Resources/Shaders/god_rays/render_pass.fs");
-	renderPassShader.use();
-	renderPassShader.setInt(phoenix::G_PREVIOUS_FRAME_MAP, 0);
+	phoenix::Shader blurShader("../Resources/Shaders/god_rays/render_quad.vs", "../Resources/Shaders/god_rays/blur.fs");
+	blurShader.use();
+	blurShader.setInt(phoenix::G_PREVIOUS_FRAME_MAP, 0);
 	phoenix::Shader renderQuadShader("../Resources/Shaders/god_rays/render_quad.vs", "../Resources/Shaders/god_rays/render_quad.fs");
 	renderQuadShader.use();
 	renderQuadShader.setInt(phoenix::G_RENDER_TARGET, 0);
@@ -95,6 +96,9 @@ int main()
 	previousFrameMap = gBuffer->genAttachment(GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
 	GLenum bufs[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
 	glDrawBuffers(4, bufs);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, blurRenderTarget->_FBO);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -122,7 +126,7 @@ int main()
 		{
 			execGeometryPass(gBufferPassShader, sponza);
 			execLightingPass(lightingPassShader);
-			execRenderPass(renderPassShader);
+			execBlurPasses(blurShader);
 		}
 
 		glfwSwapBuffers(window);
@@ -293,17 +297,24 @@ void execLightingPass(const phoenix::Shader& shader)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void execRenderPass(const phoenix::Shader& shader)
+void execBlurPasses(const phoenix::Shader& blurShader)
 {
-	shader.use();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, previousFrameMap);
-	utils->renderQuad(shader);
+	blurShader.use();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, blurRenderTarget->_FBO);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	blurShader.setVec2(phoenix::G_DIR, glm::vec2(1.0f, 0.0f));
+	utils->renderQuad(blurShader, previousFrameMap);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	blurShader.setVec2(phoenix::G_DIR, glm::vec2(0.0f, 1.0f));
+	utils->renderQuad(blurShader, blurRenderTarget->_textureID);
 }
 
 void initPointers()
 {
 	shadowCommon = new phoenix::ShadowCommon();
+	blurRenderTarget = new phoenix::Framebuffer(phoenix::SCREEN_WIDTH, phoenix::SCREEN_HEIGHT);
 	gBuffer = new phoenix::Framebuffer(phoenix::SCREEN_WIDTH, phoenix::SCREEN_HEIGHT);
 	shadowMapRenderTarget = new phoenix::Framebuffer(phoenix::HIGH_RES_WIDTH, phoenix::HIGH_RES_HEIGHT, true);
 	utils = new phoenix::Utils();
@@ -316,5 +327,6 @@ void deletePointers()
 	delete utils;
 	delete shadowMapRenderTarget;
 	delete gBuffer;
+	delete blurRenderTarget;
 	delete shadowCommon;
 }
