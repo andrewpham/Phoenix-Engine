@@ -34,13 +34,12 @@ uniform sampler2D gAlbedoSpecularMap;
 uniform sampler2D gShadowMap;
 
 uniform DirectLight gDirectLight;
-uniform mat4 gInverseViewMatrix;
 uniform mat4 gLightSpaceVP;
 uniform vec3 gViewPos;
 uniform float gAmbientFactor;
 
-const vec3 P = vec3(gInverseViewMatrix * vec4(texture(gPositionMap, TexCoords).rgb, 1.0f));
-const vec3 N = vec3(gInverseViewMatrix * vec4(texture(gNormalMap, TexCoords).rgb, 1.0f)); 
+const vec3 P = texture(gPositionMap, TexCoords).rgb;
+const vec3 N = texture(gNormalMap, TexCoords).rgb;
 const vec4 ALBEDO_SPECULAR = texture(gAlbedoSpecularMap, TexCoords);
 const vec4 LIGHT_SPACE_POS = gLightSpaceVP * vec4(P, 1.0f);
 const vec3 LIGHT_SPACE_POS_POST_W = LIGHT_SPACE_POS.xyz / LIGHT_SPACE_POS.w * 0.5f + 0.5f;

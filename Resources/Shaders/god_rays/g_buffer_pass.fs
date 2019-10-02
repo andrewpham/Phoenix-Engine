@@ -10,12 +10,10 @@ in vec3 WorldNormal;
 uniform sampler2D gDiffuseMap0;
 uniform sampler2D gSpecularMap0;
 
-uniform mat4 gViewMatrix;
-
 void main()
 {
-    Position = vec3(gViewMatrix * vec4(WorldPos, 1.0f));
-    Normal = vec3(gViewMatrix * vec4(normalize(WorldNormal), 1.0f));
+    Position = WorldPos;
+    Normal = normalize(WorldNormal);
     AlbedoSpecular.rgb = texture(gDiffuseMap0, TexCoords).rgb;
     AlbedoSpecular.a = texture(gSpecularMap0, TexCoords).r;
 }

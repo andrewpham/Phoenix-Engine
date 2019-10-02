@@ -270,7 +270,6 @@ void execGeometryPass(const phoenix::Shader& shader, phoenix::Model& object)
 
 	shader.use();
 	shader.setMat4(phoenix::G_VP, utils->_projection * utils->_view);
-	shader.setMat4(phoenix::G_VIEW_MATRIX, utils->_view);
 	renderObject(shader, object);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -282,7 +281,6 @@ void execLightingPass(const phoenix::Shader& shader)
 
 	setLightSpaceVP(shader);
 	shader.setVec3(phoenix::G_VIEW_POS, camera->_position);
-	shader.setMat4(phoenix::G_INVERSE_VIEW_MATRIX, glm::inverse(utils->_view));
 	directLight.setUniforms(shader);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, gBuffer->_textureID);
