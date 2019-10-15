@@ -17,6 +17,8 @@ void execRenderPass(const phoenix::Shader&, phoenix::Model&);
 void initPointers();
 void deletePointers();
 
+const float TEXTURE_SIZE = phoenix::SHADOW_MAP_WIDTH;
+const float SAMPLE_RADIUS = 3.0f;
 const float CORRECTION_FACTOR = 0.0f;
 
 phoenix::Camera* camera;
@@ -77,10 +79,11 @@ int main()
 	phoenix::Shader renderQuadShader("../Resources/Shaders/shadow_mapping/render_quad.vs", "../Resources/Shaders/shadow_mapping/z_buffer.fs");
 	renderQuadShader.use();
 	renderQuadShader.setInt(phoenix::G_DEPTH_MAP, 0);
-	phoenix::Shader blurShader("../Resources/Shaders/shadow_mapping/blur.comp");
+	phoenix::Shader blurShader("../Resources/Shaders/shadow_mapping/render_quad.vs", "../Resources/Shaders/shadow_mapping/blur.fs");
 	blurShader.use();
-	blurShader.setInt("gInput", 0);
-	blurShader.setInt(phoenix::G_OUTPUT, 1);
+	blurShader.setInt(phoenix::G_DEPTH_MAP, 0);
+	blurShader.setFloat("gResolution", TEXTURE_SIZE);
+	blurShader.setFloat("gRadius", SAMPLE_RADIUS);
 	phoenix::Shader debugLinesShader("../Resources/Shaders/shadow_mapping/debug_lines.vs", "../Resources/Shaders/shadow_mapping/debug_lines.fs");
 
 	phoenix::Model dragon("../Resources/Objects/dragon/dragon.obj");
@@ -159,7 +162,7 @@ void setupRenderToTexture()
 	for (size_t i = 0; i < shadowMaps.size(); ++i)
 	{
 		glBindTexture(GL_TEXTURE_2D, shadowMaps[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4096, 4096, 0, GL_RGBA, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, phoenix::SHADOW_MAP_WIDTH, phoenix::SHADOW_MAP_HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -172,31 +175,30 @@ void setupRenderToTexture()
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, shadowMaps[0], 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, shadowMaps[1], 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void execShadowMapPass(const phoenix::Shader& shadowMapPassShader, const phoenix::Shader& blurShader, phoenix::Model& object)
 {
 	shadowCommon->setLightSpaceVP(shadowMapPassShader, shadowCommon->_lightPos, phoenix::TARGET);
-	glViewport(0, 0, 4096, 4096);
+	glViewport(0, 0, phoenix::SHADOW_MAP_WIDTH, phoenix::SHADOW_MAP_HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 	shadowCommon->renderScene(utils, shadowMapPassShader, object);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 	blurShader.use();
 
-	blurShader.setIVec2(phoenix::G_DIR, glm::ivec2(1, 0));
-	glBindImageTexture(0, shadowMaps[0], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-	glBindImageTexture(1, shadowMaps[1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	glDispatchCompute(256, 256, 1);
+	glDrawBuffer(GL_COLOR_ATTACHMENT1);
+	blurShader.setVec2(phoenix::G_DIR, glm::vec2(1.0f, 0.0f));
+	utils->renderQuad(blurShader, shadowMaps[0]);
 
-	blurShader.setIVec2(phoenix::G_DIR, glm::ivec2(0, 1));
-	glBindImageTexture(0, shadowMaps[1], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-	glBindImageTexture(1, shadowMaps[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	glDispatchCompute(256, 256, 1);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	blurShader.setVec2(phoenix::G_DIR, glm::vec2(0.0f, 1.0f));
+	utils->renderQuad(blurShader, shadowMaps[1]);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void execRenderPass(const phoenix::Shader& shader, phoenix::Model& object)

@@ -277,7 +277,7 @@ void calcOrthoProjs()
 		float minZ = std::numeric_limits<float>::max();
 		float maxZ = std::numeric_limits<float>::min();
 
-		for (size_t j = 0; j < phoenix::NUM_FRUSTUM_CORNERS; ++i)
+		for (size_t j = 0; j < phoenix::NUM_FRUSTUM_CORNERS; ++j)
 		{
 			// Transform the frustum coordinate from view to world space
 			glm::vec4 vW = cameraInverse * frustumCorners[j];
