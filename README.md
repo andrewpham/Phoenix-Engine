@@ -2,13 +2,7 @@
 Real-time physically based renderin'.
 
 ### Features
-Variance shadow mapping with Gaussian filtering using a ping-pong FBO or compute shaders, percentage-closer soft shadows and reflective shadow maps using Poisson disk sampling, cascaded shadow mapping, screen space reflections using deferred shading and ray marching, physically based rendering with image-based lighting and a spherical harmonics probe, hair and skin rendering, volumetric lighting, tiled deferred shading using compute shaders, and indirect illumination using voxel cone tracing.
-
-Mesh loading using Assimp.  
-Texture loading using nothings' stb library.
-
-### Dependencies
-Glad, GLFW, OpenGL Mathematics (GLM), and Assimp.
+Variance shadow mapping with Gaussian filtering, percentage-closer soft shadows and reflective shadow maps using Poisson disk sampling, cascaded shadow mapping, screen space reflections using deferred shading and ray marching, physically based rendering with image-based lighting and a spherical harmonics probe, volumetric lighting, tiled deferred shading using compute shaders, and indirect illumination using voxel cone tracing.
 
 ### Screenshots
 ![](images/ibl.png "Image-Based Lighting")
@@ -24,7 +18,6 @@ Glad, GLFW, OpenGL Mathematics (GLM), and Assimp.
 ![](images/csm.png "Cascaded Shadow Mapping")
 ![](images/ssr.png "Screen Space Reflections")
 ![](images/tds.png "Tiled Deferred Shading")
-![](images/sss.png "Subsurface Scattering Using Texture Space Diffusion")
 ![](images/vl.png "Volumetric Lighting")
 
 ### Resources
@@ -47,9 +40,5 @@ Robin Green's [Spherical Harmonic Lighting: The Gritty Details](http://silviojem
 Ravi Ramamoorthi's [An Efficient Representation for Irradiance Environment Maps](http://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf) Paper  
 [Stupid Spherical Harmonics (SH) Tricks](https://www.ppsloan.org/publications/StupidSH36.pdf)  
 Carsten Dachsbacher's [Reflective Shadow Maps](http://www.klayge.org/material/3_12/GI/rsm.pdf) Paper  
-Thorsten Scheuermann’s SIGGRAPH Talk on [Practical Real-Time Hair Rendering and Shading](https://pdfs.semanticscholar.org/aa4c/9b498a48ec9eff1d93eaca646b3c9d2490b1.pdf)  
-Thorsten Scheuermann’s GDC Talk on [Hair Rendering and Shading](http://web.engr.oregonstate.edu/~mjb/cs519/Projects/Papers/HairRendering.pdf)  
-[Practical Real-Time Hair Rendering and Shading](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.607.1272&rep=rep1&type=pdf) Paper  
-The [Advanced Techniques for Realistic Real-Time Skin Rendering](https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch14.html) Chapter in GPU Gems 3  
 S. James Lee’s [Realistic Skin Rendering](https://www.evl.uic.edu/sjames/cs525/project3.html) Resource  
 Alexandre Pestana’s [Post](http://www.alexandre-pestana.com/volumetric-lights/) on Volumetric Lights
